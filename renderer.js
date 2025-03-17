@@ -11,13 +11,16 @@ window.onload = () => {
 
     // Initialize the map
     initMap();
+
+    // Request global data from the main process
+    window.electron.requestGlobalData();
 };
 
 // Initialize Google Map
 function initMap() {
     // Log that we're trying to initialize the map
     console.log('Initializing map...');
-    
+
     map = new google.maps.Map(document.getElementById('map'), {
         center: { lat: -34.397, lng: 150.644 }, // Default location
         zoom: 8,
@@ -29,7 +32,7 @@ function initMap() {
     }
 
     console.log('Map initialized successfully');
-    
+
     // Add a click event to log map coordinates
     map.addListener('click', (e) => {
         console.log('Map clicked at: ', e.latLng.lat(), e.latLng.lng());
@@ -46,10 +49,15 @@ function addMarker(position) {
     const marker = new google.maps.Marker({
         position: position,
         map: map,
-        title: 'Hello World!'
+        title: 'Hello World!',
     });
 
     marker.addListener('click', () => {
         alert('Marker clicked!');
     });
 }
+
+// Listen for the global data sent from the main process
+window.electron.onReceiveGlobalData((event, data) => {
+    console.log('Received global data:', data);
+});

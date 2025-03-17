@@ -1,7 +1,13 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-// Expose protected methods that allow the renderer process to use
-// the ipcRenderer without exposing the entire object
+
+contextBridge.exposeInMainWorld(
+  'electron', {
+    requestGlobalData: () => ipcRenderer.send('request-global-data'),
+    onReceiveGlobalData: (callback) => ipcRenderer.on('send-global-data', callback),
+}
+);
+
 contextBridge.exposeInMainWorld(
   'api', {
     getApiKey: () => ipcRenderer.invoke("get-api-key"),
@@ -24,6 +30,7 @@ contextBridge.exposeInMainWorld(
     }
   }
 );
+
 
 // Log when preload script is executed
 console.log('Preload script loaded');
