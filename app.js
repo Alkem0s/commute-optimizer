@@ -433,4 +433,17 @@ function decodePolyline(encodedPolyline) {
     return points;
 }
 
+document.getElementById("addDataBtn").addEventListener("click", async () => {
+    // Example of collection name and data to add
+    const collectionName = "exampleCollection"; // Replace with your actual collection name
+    const data = { name: "John Doe", age: 30 }; // Replace with the actual data you want to add
+    
+    const result = await window.firebaseAPI.addData(collectionName, data);
+    if (result.success) {
+        alert("Document added with ID: " + result.id);
+    } else {
+        alert("Error: " + result.error);
+    }
+});
+
 window.initMap = initMap;

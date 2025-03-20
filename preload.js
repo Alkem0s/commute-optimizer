@@ -1,11 +1,11 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-
+// Expose existing functionality for global data, API keys, and communication
 contextBridge.exposeInMainWorld(
   'electron', {
     requestGlobalData: () => ipcRenderer.send('request-global-data'),
     onReceiveGlobalData: (callback) => ipcRenderer.on('send-global-data', callback),
-}
+  }
 );
 
 contextBridge.exposeInMainWorld(
@@ -31,6 +31,27 @@ contextBridge.exposeInMainWorld(
   }
 );
 
+// Expose Firestore functionality to the renderer process (via IPC)
+contextBridge.exposeInMainWorld(
+  'firebaseAPI', {
+    addData: async (collectionName, data) => {
+      try {
+        const result = await ipcRenderer.invoke('firebase:addData', collectionName, data);
+        return result;
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    },
+    getData: async (collectionName) => {
+      try {
+        const result = await ipcRenderer.invoke('firebase:getData', collectionName);
+        return result;
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    }
+  }
+);
 
 // Log when preload script is executed
 console.log('Preload script loaded');
