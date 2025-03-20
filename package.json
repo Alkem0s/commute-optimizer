@@ -12,6 +12,7 @@
     "electron": "^25.0.0"
   },
   "dependencies": {
-    "firebase": "^11.4.0"
+    "firebase": "^11.4.0",
+    "firebase-admin": "^13.2.0"
   }
 }
