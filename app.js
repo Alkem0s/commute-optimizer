@@ -1,5 +1,6 @@
 let map;
 let markers = []; // Array to store route markers
+let includedMarkers = [];
 let specialMarker = null; // Special marker instance
 let specialMarkerMode = false; // Flag to toggle special marker mode
 let mainRoutePolyline = null;
@@ -34,17 +35,25 @@ function initMap() {
     });
 
     document.getElementById('calculate-route').addEventListener('click', () => {
-        if (markers.length < 2) {
-            alert('Please add at least two regular markers!');
-            return;
-        }
-    
-        calculateOptimalRoute(markers, false);
-        if (specialMarker) {
-            let closestMarker = findClosestMarker();
-            if (closestMarker) {
-                calculateOptimalRoute([specialMarker, closestMarker], true);
-                updatePlacesList(specialMarker.getPosition(), 0, true);
+        if (specialMarkerMode) {
+            if (!specialMarker) {
+                alert('Please add a special marker first!');
+                return;
+            }
+            calculateOptimalRoute([specialMarker, findClosestMarker()], true);
+            updatePlacesList(specialMarker.getPosition(), 0, true);
+        } else {
+            if (markers.length < 2) {
+                alert('Please add at least two regular markers!');
+                return;
+            }
+
+            calculateOptimalRoute(markers, false);
+            if (specialMarker) {
+                if (closestMarker) {
+                    calculateOptimalRoute([specialMarker, findClosestMarker()], true);
+                    updatePlacesList(specialMarker.getPosition(), 0, true);
+                }
             }
         }
     });
@@ -69,20 +78,15 @@ function addMarker(position) {
 
             // When the special marker is placed or moved, recalculate the closest marker
             specialMarker.addListener('dragend', () => {
-                closestMarker = findClosestMarker();
-                if (closestMarker) {
-                    calculateOptimalRoute([specialMarker, closestMarker], true);
+                if (includedMarkers.includes(specialMarker)) {
+                    closestMarker = findClosestMarker();
+                    if (closestMarker) {
+                        calculateOptimalRoute([specialMarker, closestMarker], true);
+                        updatePlacesList(position, 0, true);
+                    }
                 }
-                updatePlacesList(position, 0, true);
             });
-            closestMarker = findClosestMarker(); // Call to find closest marker immediately when the special marker is placed
         }
-        if (closestMarker) {
-            calculateOptimalRoute([specialMarker, closestMarker], true);
-        }
-
-        updatePlacesList(position, 0, true);
-
     } else {
         // Regular marker logic for the route
         const marker = new google.maps.Marker({
@@ -96,10 +100,10 @@ function addMarker(position) {
 
         marker.addListener('dragend', () => {
             updatePlacesList(marker.getPosition(), index);
-            if (markers.length > 1) {
+            if (markers.length > 1 && includedMarkers.includes(marker)) {
                 calculateOptimalRoute(markers, false);
             }
-            if (specialMarker) {
+            if (specialMarker && includedMarkers.includes(marker)) {
                 let closestMarker = findClosestMarker();
                 if (closestMarker) {
                     calculateOptimalRoute([specialMarker, closestMarker], true);
@@ -223,6 +227,10 @@ async function calculateOptimalRoute(routeMarkers, isSpecialRoute = false) {
                 }
             };
         });
+        
+        // Record each routeMarker to includedMarkers
+        includedMarkers = [...routeMarkers];
+        console.log(includedMarkers);
 
         // Format the request body according to the Routes API v2 documentation
         const requestBody = {
