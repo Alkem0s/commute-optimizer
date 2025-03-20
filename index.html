@@ -1,34 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-    <title>Optimal Route Calculator</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Commute Optimizer - Hoş Geldiniz</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #a9cce3, #a3e4d7, #45b39d);
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: white;
+            color: black;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #a3e4d7;
+        }
+    </style>
 </head>
 <body>
-    <!--- TODO: Make a main page? --->
-    <button id="addDataBtn">Add Data to Firestore</button>
-    <div class="container">
-        <div id="map"></div>
-        <div class="places-container">
-            <h2>Selected Locations</h2>
-            <button id="calculate-route">Calculate Optimal Route</button>
-            <button id="toggleSpecialMarker">Toggle Special Marker Mode</button>
-            <div id="places-list"></div>
-            <div id="result"></div>
-        </div>
-    </div>
-    <script src="app.js"></script>
+    <h1>Hoş Geldiniz!</h1>
+    <div id="canvas-container"></div>
+    <button onclick="goToMap()">Haritayı Aç</button>
+  
+    <script src="main.js"></script> <!-- JavaScript dosyamızı çağırıyoruz -->
     
-    <script>
-        window.api.getApiKey().then((apiKey) => {
-            const script = document.createElement("script");
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places&callback=initMap`;;
-            script.async = true;
-            script.defer = true;
-            document.body.appendChild(script);
-        }).catch(err => {
-            console.error("Failed to load API key:", err);
-        });
-    </script>
+    <div style="text-align: center;">
+        <h2>🌍 Hoş Geldiniz.</h1>
+        <p>Haritaya gitmek için aşağıdaki butona tıklayınız.</p>
+        <button onclick="window.location.href='map.html'">Haritayı Aç</button>
+
+    </div>
 </body>
 </html>
