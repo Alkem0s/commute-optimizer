@@ -1,5 +1,3 @@
-let map;
-
 window.onload = () => {
     // Check if Google Maps is defined
     if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
@@ -61,3 +59,24 @@ function addMarker(position) {
 window.electron.onReceiveGlobalData((event, data) => {
     console.log('Received global data:', data);
 });
+import { db } from "./firebase.js";
+import { collection, getDocs, addDoc } from "firebase/firestore";
+
+// Fetch data from Firestore
+async function fetchData() {
+    const querySnapshot = await getDocs(collection(db, "test"));
+    querySnapshot.forEach((doc) => {
+        console.log(doc.id, " => ", doc.data());
+    });
+}
+
+// Add data to Firestore
+async function addData() {
+    await addDoc(collection(db, "test"), {
+        name: "Sample Data",
+        createdAt: new Date()
+    });
+}
+
+fetchData();
+addData();
