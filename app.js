@@ -1,13 +1,17 @@
 let map;
-let markers = [];
+let markers = []; // Array to store route markers
+let specialMarker = null; // Special marker instance
+let specialMarkerMode = false; // Flag to toggle special marker mode
+let mainRoutePolyline = null;
+let closestRoutePolyline = null;
 let geocoder;
-let currentRoutePolyline;
 let infoWindow;
 
+// Initialize map
 function initMap() {
     geocoder = new google.maps.Geocoder();
     infoWindow = new google.maps.InfoWindow();
-    
+
     map = new google.maps.Map(document.getElementById('map'), {
         center: { lat: 0, lng: 0 },
         zoom: 2
@@ -29,46 +33,149 @@ function initMap() {
         addMarker(e.latLng);
     });
 
-    document.getElementById('calculate-route').addEventListener('click', calculateOptimalRoute);
+    document.getElementById('calculate-route').addEventListener('click', () => {
+        if (markers.length < 2) {
+            alert('Please add at least two regular markers!');
+            return;
+        }
+    
+        calculateOptimalRoute(markers, false);
+        if (specialMarker) {
+            let closestMarker = findClosestMarker();
+            if (closestMarker) {
+                calculateOptimalRoute([specialMarker, closestMarker], true);
+                updatePlacesList(specialMarker.getPosition(), 0, true);
+            }
+        }
+    });
+    document.getElementById('toggleSpecialMarker').addEventListener('click', toggleSpecialMarkerMode);
 }
 
-function addMarker(location) {
-    const marker = new google.maps.Marker({
-        position: location,
-        map: map,
-        draggable: true,
-        label: (markers.length + 1).toString()
-    });
+function addMarker(position) {
+    if (specialMarkerMode) {
+        let closestMarker = null;
+        if (specialMarker) {
+            specialMarker.setPosition(position); // Move special marker if it already exists
+            closestMarker = findClosestMarker();
+        } else {
+            // Create a special marker if it doesn't exist yet
+            specialMarker = new google.maps.Marker({
+                position: position,
+                map: map,
+                title: 'Special Marker',
+                icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png', // Different color for special marker
+                draggable: true,
+            });
 
-    const index = markers.push(marker) - 1;
+            // When the special marker is placed or moved, recalculate the closest marker
+            specialMarker.addListener('dragend', () => {
+                closestMarker = findClosestMarker();
+                if (closestMarker) {
+                    calculateOptimalRoute([specialMarker, closestMarker], true);
+                }
+                updatePlacesList(position, 0, true);
+            });
+            closestMarker = findClosestMarker(); // Call to find closest marker immediately when the special marker is placed
+        }
+        if (closestMarker) {
+            calculateOptimalRoute([specialMarker, closestMarker], true);
+        }
 
-    marker.addListener('dragend', () => {
-        updatePlacesList(marker.getPosition(), index);
-        if (currentRoutePolyline) {
-            currentRoutePolyline.setMap(null);
-            currentRoutePolyline = null;
+        updatePlacesList(position, 0, true);
+
+    } else {
+        // Regular marker logic for the route
+        const marker = new google.maps.Marker({
+            position: position,
+            map: map,
+            draggable: true,
+            label: (markers.length + 1).toString(),
+        });
+
+        const index = markers.push(marker) - 1;
+
+        marker.addListener('dragend', () => {
+            updatePlacesList(marker.getPosition(), index);
+            if (markers.length > 1) {
+                calculateOptimalRoute(markers, false);
+            }
+            if (specialMarker) {
+                let closestMarker = findClosestMarker();
+                if (closestMarker) {
+                    calculateOptimalRoute([specialMarker, closestMarker], true);
+                    updatePlacesList(position, 0, true);
+                }
+            }
+        });
+
+        updatePlacesList(position, index, false);
+    }
+}
+
+// Function to find the closest regular route marker to the special marker
+function findClosestMarker() {
+    if (!specialMarker || markers.length < 1) return null;
+
+    let closestMarker = null;
+    let closestDistance = Infinity;
+
+    markers.forEach(marker => {
+        const distance = google.maps.geometry.spherical.computeDistanceBetween(specialMarker.getPosition(), marker.getPosition());
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestMarker = marker;
         }
     });
 
-    updatePlacesList(location, index);
+    return closestMarker;
 }
 
-function updatePlacesList(location, index) {
+
+// Toggle special marker mode
+function toggleSpecialMarkerMode() {
+    specialMarkerMode = !specialMarkerMode;
+    if (specialMarkerMode) {
+        alert("Special Marker Mode Enabled. Click to place or move the special marker.");
+    } else {
+        alert("Regular Marker Mode Enabled. Click to place route markers.");
+    }
+}
+
+// Calculate and update places list
+function updatePlacesList(location, index, isSpecialMarker = false) {
     geocoder.geocode({ location }, (results, status) => {
         const placesList = document.getElementById('places-list');
         const address = status === 'OK' && results[0] 
             ? results[0].formatted_address 
             : 'Address not found';
 
-        let placeItem = placesList.children[index];
-        if (!placeItem) {
-            placeItem = document.createElement('div');
-            placeItem.className = 'place-item';
-            placesList.appendChild(placeItem);
+        // If it's a special marker, use a different identifier
+        const markerLabel = isSpecialMarker ? 'Special Marker' : `Marker ${index + 1}`;
+
+        let placeItem;
+
+        if (isSpecialMarker) {
+            // Check if a place item for the special marker already exists
+            placeItem = document.querySelector('.special-marker-item');
+            if (!placeItem) {
+                // If no special marker item, create a new one
+                placeItem = document.createElement('div');
+                placeItem.className = 'place-item special-marker-item';
+                placesList.appendChild(placeItem);
+            }
+        } else {
+            // For regular markers, use the provided index
+            placeItem = placesList.children[index];
+            if (!placeItem) {
+                placeItem = document.createElement('div');
+                placeItem.className = 'place-item';
+                placesList.appendChild(placeItem);
+            }
         }
 
+        // Update the HTML content for the place item
         placeItem.innerHTML = `
-            <strong>Marker ${index + 1}</strong><br>
+            <strong>${markerLabel}</strong><br>
             Lat: ${location.lat().toFixed(6)}<br>
             Lng: ${location.lng().toFixed(6)}<br>
             ${address}
@@ -76,17 +183,23 @@ function updatePlacesList(location, index) {
     });
 }
 
-async function calculateOptimalRoute() {
-    if (markers.length < 2) {
+async function calculateOptimalRoute(routeMarkers, isSpecialRoute = false) {
+    if (routeMarkers.length < 2) {
         alert('Please add at least two markers');
         return;
     }
 
     try {
-        // Clear existing polyline if present
-        if (currentRoutePolyline) {
-            currentRoutePolyline.setMap(null);
-            currentRoutePolyline = null;
+        // If this is a special route calculation, clear the existing closestRoutePolyline
+        if (isSpecialRoute && closestRoutePolyline) {
+            closestRoutePolyline.setMap(null);
+            closestRoutePolyline = null;
+        }
+
+        // Clear the mainRoutePolyline if needed
+        if (!isSpecialRoute && mainRoutePolyline) {
+            mainRoutePolyline.setMap(null);
+            mainRoutePolyline = null;
         }
 
         // Extract API key from the Google Maps script tag
@@ -99,10 +212,8 @@ async function calculateOptimalRoute() {
             throw new Error('Google Maps API key not found');
         }
 
-        console.log("Using API key: " + apiKey.substring(0, 4) + "...");
-
         // Create intermediates (waypoints) for the Routes API
-        const intermediates = markers.slice(1, -1).map(marker => {
+        const intermediates = routeMarkers.slice(1, -1).map(marker => {
             return {
                 location: {
                     latLng: {
@@ -118,16 +229,16 @@ async function calculateOptimalRoute() {
             origin: {
                 location: {
                     latLng: {
-                        latitude: markers[0].getPosition().lat(),
-                        longitude: markers[0].getPosition().lng()
+                        latitude: routeMarkers[0].getPosition().lat(),
+                        longitude: routeMarkers[0].getPosition().lng()
                     }
                 }
             },
             destination: {
                 location: {
                     latLng: {
-                        latitude: markers[markers.length - 1].getPosition().lat(),
-                        longitude: markers[markers.length - 1].getPosition().lng()
+                        latitude: routeMarkers[routeMarkers.length - 1].getPosition().lat(),
+                        longitude: routeMarkers[routeMarkers.length - 1].getPosition().lng()
                     }
                 }
             },
@@ -139,8 +250,6 @@ async function calculateOptimalRoute() {
             languageCode: "en-US",
             units: "METRIC"
         };
-
-        console.log("Request body:", JSON.stringify(requestBody, null, 2));
 
         // Make API request with corrected field mask
         const response = await fetch(
@@ -156,7 +265,6 @@ async function calculateOptimalRoute() {
         );
 
         const responseText = await response.text();
-        console.log("API Response:", responseText);
         
         if (!response.ok) {
             let errorMessage = "Routes API error";
@@ -181,30 +289,64 @@ async function calculateOptimalRoute() {
             // Use the correct field name for optimized waypoint indices
             const waypointOrder = route.optimized_intermediate_waypoint_index || [];
             
-            // Output results
-            document.getElementById('result').innerHTML = `
+            // Append results for each route to the result section
+            const resultContainer = document.getElementById('result');
+            const routeLabel = isSpecialRoute ? 'Special Route' : 'Main Route';
+
+            // Check if the route already exists (using a unique ID or class)
+            let routeDiv = document.querySelector(`.route-info.${isSpecialRoute ? 'special-route' : 'main-route'}`);
+
+            if (!routeDiv) {
+                // Create a new route div if it doesn't exist
+                routeDiv = document.createElement('div');
+                routeDiv.className = `route-info ${isSpecialRoute ? 'special-route' : 'main-route'}`;
+                resultContainer.appendChild(routeDiv);
+            }
+
+            // Update the route info
+            routeDiv.innerHTML = `
+                <strong>${routeLabel}</strong><br>
                 Total distance: ${(totalDistance / 1000).toFixed(2)} km<br>
                 Total duration: ${Math.floor(totalDuration / 60)} minutes ${totalDuration % 60} seconds<br>
                 ${waypointOrder.length > 0 ? `Optimized waypoint order: ${waypointOrder.join(', ')}` : 'Direct route calculated.'}
             `;
-            
+
+
             // Draw the route on the map using a Polyline
             if (route.polyline && route.polyline.encodedPolyline) {
                 const decodedPath = decodePolyline(route.polyline.encodedPolyline);
                 
-                currentRoutePolyline = new google.maps.Polyline({
-                    path: decodedPath,
-                    geodesic: true,
-                    strokeColor: '#4285F4',
-                    strokeOpacity: 1.0,
-                    strokeWeight: 4,
-                    map: map
-                });
-                
-                // Adjust map bounds to show the entire route
-                const bounds = new google.maps.LatLngBounds();
-                decodedPath.forEach(point => bounds.extend(point));
-                map.fitBounds(bounds);
+                // If it's a special route, draw it with a different color (e.g., red)
+                if (isSpecialRoute) {
+                    closestRoutePolyline = new google.maps.Polyline({
+                        path: decodedPath,
+                        geodesic: true,
+                        strokeColor: '#FF0000',  // Red color for the special route
+                        strokeOpacity: 1.0,
+                        strokeWeight: 4,
+                        map: map
+                    });
+
+                    // Adjust map bounds to show the entire route
+                    const bounds = new google.maps.LatLngBounds();
+                    decodedPath.forEach(point => bounds.extend(point));
+                    map.fitBounds(bounds);
+                } else {
+                    // For the main route, use the default color
+                    mainRoutePolyline = new google.maps.Polyline({
+                        path: decodedPath,
+                        geodesic: true,
+                        strokeColor: '#4285F4', // Blue color for the main route
+                        strokeOpacity: 1.0,
+                        strokeWeight: 4,
+                        map: map
+                    });
+
+                    // Adjust map bounds to show the entire route
+                    const bounds = new google.maps.LatLngBounds();
+                    decodedPath.forEach(point => bounds.extend(point));
+                    map.fitBounds(bounds);
+                }
             }
         } else {
             throw new Error('No routes found');
@@ -218,17 +360,18 @@ async function calculateOptimalRoute() {
     }
 }
 
+
 // Fallback function to draw a simple route if all else fails
-function fallbackDrawPolyline() {
-    if (currentRoutePolyline) {
-        currentRoutePolyline.setMap(null);
+function fallbackDrawPolyline(routeMarkers) {
+    if (mainRoutePolyline) {
+        mainRoutePolyline.setMap(null);
     }
     
     // Create a path between all markers in order
-    const path = markers.map(marker => marker.getPosition());
+    const path = routeMarkers.map(marker => marker.getPosition());
     
     // Draw a simple polyline
-    currentRoutePolyline = new google.maps.Polyline({
+    mainRoutePolyline = new google.maps.Polyline({
         path: path,
         geodesic: true,
         strokeColor: '#FF0000',
