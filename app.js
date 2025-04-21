@@ -8,6 +8,8 @@ let closestRoutePolyline = null;
 let geocoder;
 let infoWindow;
 
+const { spawn } = require('child_process');
+
 // Initialize map
 function initMap() {
     geocoder = new google.maps.Geocoder();
@@ -40,7 +42,7 @@ function initMap() {
                 alert('Please add a special marker first!');
                 return;
             }
-            calculateOptimalRoute([specialMarker, findClosestMarker()], true);
+            calculateRoute([specialMarker, findClosestMarker()], true);
             updatePlacesList(specialMarker.getPosition(), 0, true);
         } else {
             if (markers.length < 2) {
@@ -48,10 +50,10 @@ function initMap() {
                 return;
             }
 
-            calculateOptimalRoute(markers, false);
+            calculateRoute(markers, false);
             if (specialMarker) {
                 if (closestMarker) {
-                    calculateOptimalRoute([specialMarker, findClosestMarker()], true);
+                    calculateRoute([specialMarker, findClosestMarker()], true);
                     updatePlacesList(specialMarker.getPosition(), 0, true);
                 }
             }
@@ -81,7 +83,7 @@ function addMarker(position) {
                 if (includedMarkers.includes(specialMarker)) {
                     closestMarker = findClosestMarker();
                     if (closestMarker) {
-                        calculateOptimalRoute([specialMarker, closestMarker], true);
+                        calculateRoute([specialMarker, closestMarker], true);
                         updatePlacesList(position, 0, true);
                     }
                 }
@@ -101,12 +103,12 @@ function addMarker(position) {
         marker.addListener('dragend', () => {
             updatePlacesList(marker.getPosition(), index);
             if (markers.length > 1 && includedMarkers.includes(marker)) {
-                calculateOptimalRoute(markers, false);
+                calculateRoute(markers, false);
             }
             if (specialMarker && includedMarkers.includes(marker)) {
                 let closestMarker = findClosestMarker();
                 if (closestMarker) {
-                    calculateOptimalRoute([specialMarker, closestMarker], true);
+                    calculateRoute([specialMarker, closestMarker], true);
                     updatePlacesList(position, 0, true);
                 }
             }
@@ -115,6 +117,133 @@ function addMarker(position) {
         updatePlacesList(position, index, false);
     }
 }
+
+// Function to calculate the distance between two coordinates
+function getDistanceBetweenCoords(lat1, lng1, lat2, lng2) {
+    const point1 = new google.maps.LatLng(lat1, lng1);
+    const point2 = new google.maps.LatLng(lat2, lng2);
+    
+    return google.maps.geometry.spherical.computeDistanceBetween(point1, point2);
+}
+
+// Function to calculate the distance between two markers using the Routes API
+async function calculateRouteDistanceMarkers(marker1, marker2, travelMode = 'DRIVE') {
+    if (!marker1 || !marker2) {
+        throw new Error('Two markers are required');
+    }
+
+    // Extract API key from the Google Maps script tag
+    const scriptTag = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
+    const scriptSrc = scriptTag?.src || '';
+    const apiKey = scriptSrc.match(/[?&]key=([^&]*)/)?.[1];
+
+    if (!apiKey) {
+        throw new Error('Google Maps API key not found');
+    }
+
+    // Create the API request payload
+    const requestBody = {
+        origin: {
+            location: {
+                latLng: {
+                    latitude: marker1.getPosition().lat(),
+                    longitude: marker1.getPosition().lng()
+                }
+            }
+        },
+        destination: {
+            location: {
+                latLng: {
+                    latitude: marker2.getPosition().lat(),
+                    longitude: marker2.getPosition().lng()
+                }
+            }
+        },
+        travelMode: travelMode,
+        routingPreference: "TRAFFIC_AWARE",
+        units: "METRIC"
+    };
+
+    // Make the API request
+    const response = await fetch(
+        `https://routes.googleapis.com/directions/v2:computeRoutes?key=${apiKey}`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-FieldMask': 'routes.distanceMeters'
+            },
+            body: JSON.stringify(requestBody)
+        }
+    );
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error?.message || 'Failed to calculate route');
+    }
+
+    const data = await response.json();
+    return data.routes?.[0]?.distanceMeters || 0;
+}
+
+// Function to calculate the distance between two coordinates using the Routes API
+async function calculateRouteDistanceCoords(lat1, lng1, lat2, lng2, travelMode = 'DRIVE') {
+    if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) {
+        throw new Error('Coordinates for both origin and destination are required');
+    }
+
+    // Extract API key from the Google Maps script tag
+    const scriptTag = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
+    const scriptSrc = scriptTag?.src || '';
+    const apiKey = scriptSrc.match(/[?&]key=([^&]*)/)?.[1];
+
+    if (!apiKey) {
+        throw new Error('Google Maps API key not found');
+    }
+
+    const requestBody = {
+        origin: {
+            location: {
+                latLng: {
+                    latitude: lat1,
+                    longitude: lng1
+                }
+            }
+        },
+        destination: {
+            location: {
+                latLng: {
+                    latitude: lat2,
+                    longitude: lng2
+                }
+            }
+        },
+        travelMode: travelMode,
+        routingPreference: "TRAFFIC_AWARE",
+        units: "METRIC"
+    };
+
+    const response = await fetch(
+        `https://routes.googleapis.com/directions/v2:computeRoutes?key=${apiKey}`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-FieldMask': 'routes.distanceMeters'
+            },
+            body: JSON.stringify(requestBody)
+        }
+    );
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error?.message || 'Failed to calculate route');
+    }
+
+    const data = await response.json();
+    return data.routes?.[0]?.distanceMeters || 0;
+}
+
 
 // Function to find the closest regular route marker to the special marker
 function findClosestMarker() {
@@ -187,7 +316,224 @@ function updatePlacesList(location, index, isSpecialMarker = false) {
     });
 }
 
-async function calculateOptimalRoute(routeMarkers, isSpecialRoute = false) {
+const distanceCache = new Map();
+const pendingPromises = new Map();
+
+/**
+ * Optimizes vehicle routes using your existing distance calculation API
+ * @param {Array<Location>} locations - Passenger locations
+ * @param {Array<Vehicle>} vehicles - Vehicles with capacity
+ * @param {number} walkingDistance - Max walking radius in meters
+ * @returns {Promise<Array<Location>>} Optimized stops
+ */
+async function optimizeRoute(locations, vehicles, walkingDistance) {
+    // Validate input
+    if (!locations.every(l => 'lat' in l && 'lng' in l)) {
+        throw new Error('Invalid location format');
+    }
+
+    // Reset caches for fresh calculations
+    distanceCache.clear();
+    pendingPromises.clear();
+
+    // Cluster passengers using actual route distances
+    const clusters = await clusterPassengers(locations, walkingDistance);
+    const clusterCenters = calculateClusterCenters(clusters);
+    
+    // Build distance matrix using your API
+    const distanceMatrix = await buildDistanceMatrix(clusterCenters);
+
+    // Prepare input for OR-Tools
+    const input = {
+        clusters: {
+            centers: clusterCenters,
+            members: clusters,
+        },
+        passengers: locations,
+        vehicleCapacities: vehicles.map(v => v.capacity),
+        walkingRadius: walkingDistance,
+        distanceMatrix: distanceMatrix
+    };
+
+    return executePythonOptimizer(input);
+}
+
+function generateCacheKey(a, b, mode) {
+    return `${a.lat.toFixed(6)}:${a.lng.toFixed(6)}|${
+        b.lat.toFixed(6)}:${b.lng.toFixed(6)}|${mode}`;
+}
+
+// Enhanced caching layer with concurrency control
+async function cachedRouteDistance(a, b, mode) {
+    const key = generateCacheKey(a, b, mode);
+    const reverseKey = generateCacheKey(b, a, mode);
+
+    // Check existing cache
+    if (distanceCache.has(key)) return distanceCache.get(key);
+    
+    // Check pending promises
+    if (pendingPromises.has(key)) {
+        return pendingPromises.get(key);
+    }
+
+    // Create new request promise
+    const promise = (async () => {
+        try {
+            const distance = await calculateRouteDistanceCoords(
+                a.lat, a.lng, b.lat, b.lng, mode
+            );
+            
+            // Cache both directions if symmetrical
+            if (mode === 'WALKING') {
+                distanceCache.set(key, distance);
+                distanceCache.set(reverseKey, distance);
+            } else {
+                distanceCache.set(key, distance);
+            }
+            
+            return distance;
+        } finally {
+            pendingPromises.delete(key);
+        }
+    })();
+
+    // Store pending promise
+    pendingPromises.set(key, promise);
+    
+    return promise;
+}
+
+
+// Modified helper functions using cached distances
+async function clusterPassengers(locations, radius) {
+    const clusters = [];
+    const visited = new Set();
+    
+    for (const [i, loc] of locations.entries()) {
+        if (visited.has(i)) continue;
+        
+        const cluster = [loc];
+        visited.add(i);
+        
+        // Parallelize distance checks for performance
+        const distancePromises = [];
+        const candidates = [];
+        
+        // Find potential cluster members
+        for (let j = i + 1; j < locations.length; j++) {
+            if (visited.has(j)) continue;
+            candidates.push(j);
+            distancePromises.push(
+                cachedRouteDistance(loc, locations[j], 'WALKING')
+            );
+        }
+
+        // Process all distances at once
+        const distances = await Promise.all(distancePromises);
+        
+        // Add qualifying members to cluster
+        distances.forEach((distance, idx) => {
+            if (distance <= radius) {
+                const j = candidates[idx];
+                cluster.push(locations[j]);
+                visited.add(j);
+            }
+        });
+        
+        clusters.push(cluster);
+    }
+    
+    return clusters;
+}
+
+function calculateClusterCenters(clusters) {
+    return clusters.map(cluster => {
+        const avgLat = cluster.reduce((sum, l) => sum + l.lat, 0) / cluster.length;
+        const avgLng = cluster.reduce((sum, l) => sum + l.lng, 0) / cluster.length;
+        return { lat: avgLat, lng: avgLng };
+    });
+}
+
+async function buildDistanceMatrix(centers) {
+    const matrix = [];
+    const requests = [];
+    
+    // Pre-generate all requests
+    for (const source of centers) {
+        const rowRequests = centers.map(target => 
+            cachedRouteDistance(source, target, 'DRIVE')
+        );
+        requests.push(Promise.all(rowRequests));
+    }
+    
+    // Execute all rows in parallel
+    const results = await Promise.all(requests);
+    results.forEach(row => matrix.push(row));
+    
+    return matrix;
+}
+
+const { spawn } = require('child_process');
+const path = require('path');
+const { app } = require('electron');
+
+/**
+ * Executes the compiled OR-Tools optimizer executable
+ * @param {Object} input - Input data for optimization
+ * @returns {Promise<Object>} Optimized routes
+ */
+async function executePythonOptimizer(input) {
+    return new Promise((resolve, reject) => {
+        // Get correct executable path for packaging
+        const optimizerPath = path.join(
+            process.resourcesPath || app.getAppPath(), 
+            'optimizer' + (process.platform === 'win32' ? '.exe' : '')
+        );
+
+        const optimizerProcess = spawn(optimizerPath, [], {
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        let result = '';
+        let errorOutput = '';
+
+        // Handle input/output
+        optimizerProcess.stdin.write(JSON.stringify(input));
+        optimizerProcess.stdin.end();
+
+        optimizerProcess.stdout.on('data', (data) => {
+            result += data.toString();
+        });
+
+        optimizerProcess.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+
+        // Handle process events
+        optimizerProcess.on('close', (code) => {
+            if (code === 0) {
+                try {
+                    const parsedResult = JSON.parse(result);
+                    resolve(parsedResult);
+                } catch (e) {
+                    reject(new Error(`Output parsing failed: ${e.message}`));
+                }
+            } else {
+                reject(new Error(`Optimizer failed (code ${code}): ${errorOutput}`));
+            }
+        });
+
+        optimizerProcess.on('error', (err) => {
+            if (err.code === 'ENOENT') {
+                reject(new Error('Optimizer executable not found. Check packaging configuration.'));
+            } else {
+                reject(err);
+            }
+        });
+    });
+}
+
+async function calculateRoute(routeMarkers, isSpecialRoute = false) {
     if (routeMarkers.length < 2) {
         alert('Please add at least two markers');
         return;
