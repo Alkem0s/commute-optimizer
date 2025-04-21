@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passenger List</title>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #searchInput {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .edit-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+        }
+        /* Edit Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            width: 600px;
+            border-radius: 5px;
+        }
+        .modal-form-group {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Passenger List</h1>
+        
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search passengers...">
+        </div>
+
+        <table id="passengersTable">
+            <thead>
+                <tr>
+                    <th>Internal Name</th>
+                    <th>Destination Code</th>
+                    <th>Destination Description</th>
+                    <th>Service Usage</th>
+                    <th>Service Number</th>
+                    <th>Pickup Time</th>
+                    <th>Drop-off Time</th>
+                    <th>Service Order</th>
+                    <th>Service Address</th>
+                    <th>Residence Distance</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+
+        <!-- Edit Modal -->
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <h2>Edit Passenger</h2>
+                <form id="editForm">
+                    <input type="hidden" id="editDocumentId">
+                    
+                    <div class="modal-form-group">
+                        <label>Internal Display Name:</label>
+                        <input type="text" id="editDahiliGosterimAdi" required>
+                    </div>
+                    
+                    <!-- Add all other fields similarly -->
+                    <div class="modal-form-group">
+                        <label>Destination Code:</label>
+                        <input type="text" id="editGiderYeri" required>
+                    </div>
+                    
+                    <div class="modal-form-group">
+                        <label>Destination Description:</label>
+                        <input type="text" id="editGiderYeriTanim" required>
+                    </div>
+                    
+                    <div class="modal-form-group">
+                        <label>Service Usage:</label>
+                        <select id="editServisKullanimi" required>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Add remaining fields following the same pattern -->
+                    
+                    <button type="submit" class="edit-btn">Save Changes</button>
+                    <button type="button" onclick="closeEditModal()">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="passengers-list.js"></script>
+</body>
+</html>
