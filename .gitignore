@@ -1,2 +1,5 @@
 node_modules/
 *.json
+
+optimized_routes.png
+*.png
