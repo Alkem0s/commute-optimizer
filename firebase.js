@@ -1,22 +1,13 @@
-// firebase.js
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
+import admin from "firebase-admin";
 import fs from "fs";
 
-// Read config.json file
-const config = JSON.parse(fs.readFileSync("config.json", "utf8"));
+// Load service account config
+const config = JSON.parse(fs.readFileSync("config_db.json", "utf8"));
 
-// Initialize Firebase
-const firebaseApp = initializeApp({
-    apiKey: config.DB_apiKey,
-    authDomain: config.authDomain,
-    projectId: config.projectId,
-    storageBucket: config.storageBucket,
-    messagingSenderId: config.messagingSenderId,
-    appId: config.appId
+admin.initializeApp({
+  credential: admin.credential.cert(config),
 });
 
-// Get Firestore instance
-const db = getFirestore(firebaseApp);
+const db = admin.firestore();
 
-export { db, addDoc, collection };
+export { db };
