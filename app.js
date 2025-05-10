@@ -99,19 +99,9 @@ async function initMap() {
     });
     document.getElementById('toggleSpecialMarker').addEventListener('click', toggleSpecialMarkerMode);
 
-    let allRoutes = await fsAPI.getAllRoutes();
+    // Get all routes from the database
 
-    let allRouteMarkers = [];
-    for (let routeId in allRoutes) {
-        let route = allRoutes[routeId];
-        let routeMarkers = [];
-        for (let stop of route.STOPS) {
-            routeMarkers.push({ lat: parseFloat(stop.LAT), lng: parseFloat(stop.LONG) });
-        }
-        allRouteMarkers.push({ id: routeId, markers: routeMarkers });
-    }
-
-    drawInitialRoutes(allRouteMarkers);
+    drawInitialRoutes(test_markers);
 }
 
 function drawInitialRoutes(initial_markers) {
