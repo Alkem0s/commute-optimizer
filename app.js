@@ -8,7 +8,6 @@ let closestRoutePolyline = null;
 let geocoder;
 let infoWindow;
 
-const { spawn } = require('child_process');
 
 // Initialize map
 function initMap() {

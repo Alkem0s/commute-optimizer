@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "An Electron app that lets users create routes by placing dots on a Google Map",
   "main": "main.js",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "start": "electron ."
   },
