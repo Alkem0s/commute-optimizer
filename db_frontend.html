@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Commute Optimizer</title>
+</head>
+<body>
+  <button id="load-all-data">Load Entire Database</button>
+  <pre id="output">Loading...</pre>
+
+  <script type="module">
+    import { initializeFirebase, getDb } from './firebase.js';
+    import { collection, doc, getDocs } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+  
+    await initializeFirebase();
+  
+    async function fetchAllData() {
+      const db = getDb();
+      
+      if (!db) {
+        document.getElementById("output").textContent = "❌ Firebase not initialized yet.";
+        return;
+      }
+  
+      document.getElementById("output").textContent = 'Loading data...';
+  
+      try {
+        const rootCollectionRef = collection(db, "COMMUTE_OPTIMIZER_COLLECTION");
+        const rootCollectionSnapshot = await getDocs(rootCollectionRef);
+        let allData = '';
+  
+        for (const colDoc of rootCollectionSnapshot.docs) {
+          allData += `Document ID: ${colDoc.id}\n`;
+          allData += `Data: ${JSON.stringify(colDoc.data(), null, 2)}\n\n`;
+        }
+  
+        document.getElementById("output").textContent = allData || 'No data available.';
+      } catch (e) {
+        console.error("❌ Error fetching data:", e);
+        document.getElementById("output").textContent = "⚠️ Error fetching data. Check console.";
+      }
+    }
+  
+    document.getElementById('load-all-data').addEventListener('click', fetchAllData);
+  </script>
+</body>
+</html>

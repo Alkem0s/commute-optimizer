@@ -1,13 +1,24 @@
-import admin from "firebase-admin";
-import fs from "fs";
+// firebase.js
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 
-// Load service account config
-const config = JSON.parse(fs.readFileSync("config_db.json", "utf8"));
+let db = null;
 
-admin.initializeApp({
-  credential: admin.credential.cert(config),
-});
+export async function initializeFirebase() {
+  try {
+    const response = await fetch('./config.json');
+    const firebaseConfig = await response.json();
 
-const db = admin.firestore();
+    console.log('Initializing Firebase with config:', firebaseConfig);
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
 
-export { db };
+    console.log('✅ Firebase initialized successfully.');
+  } catch (error) {
+    console.error('❌❌❌❌ Firebase initialization failed:', error);
+  }
+}
+
+export function getDb() {
+  return db;
+}

@@ -60,6 +60,7 @@ function initMap() {
             calculateRoute(markers, false);
             if (specialMarker) {
                 let closestMarker = findClosestMarker();
+                let closestMarker = findClosestMarker();
                 if (closestMarker) {
                     calculateRoute([specialMarker, findClosestMarker()], true);
                     updatePlacesList(specialMarker.getPosition(), 0, true);
@@ -82,9 +83,24 @@ function drawInitialRoutes(initial_markers) {
     if (markers.length > 1) {
         calculateRoute(markers, false);
     }
+
+    // Get all routes from the database
+
+    drawInitialRoutes(test_markers);
+}
+
+function drawInitialRoutes(initial_markers) {
+    initial_markers.forEach(marker => {
+        const latLng = new google.maps.LatLng(marker.lat, marker.lng);
+        addMarker(latLng);
+    });
+    if (markers.length > 1) {
+        calculateRoute(markers, false);
+    }
 }
 
 function addMarker(position) {
+    console.log(position.lat(), position.lng());
     console.log(position.lat(), position.lng());
     if (specialMarkerMode) {
         let closestMarker = null;
