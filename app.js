@@ -8,7 +8,6 @@ let closestRoutePolyline = null;
 let geocoder;
 let infoWindow;
 
-
 // Initialize map
 function initMap() {
     geocoder = new google.maps.Geocoder();
@@ -51,6 +50,7 @@ function initMap() {
 
             calculateRoute(markers, false);
             if (specialMarker) {
+                let closestMarker = findClosestMarker();
                 if (closestMarker) {
                     calculateRoute([specialMarker, findClosestMarker()], true);
                     updatePlacesList(specialMarker.getPosition(), 0, true);
@@ -59,9 +59,24 @@ function initMap() {
         }
     });
     document.getElementById('toggleSpecialMarker').addEventListener('click', toggleSpecialMarkerMode);
+
+    // Get all routes from the database
+
+    drawInitialRoutes(test_markers);
+}
+
+function drawInitialRoutes(initial_markers) {
+    initial_markers.forEach(marker => {
+        const latLng = new google.maps.LatLng(marker.lat, marker.lng);
+        addMarker(latLng);
+    });
+    if (markers.length > 1) {
+        calculateRoute(markers, false);
+    }
 }
 
 function addMarker(position) {
+    console.log(position.lat(), position.lng());
     if (specialMarkerMode) {
         let closestMarker = null;
         if (specialMarker) {
