@@ -123,7 +123,20 @@
     }
   </script>
 
-  <script src="app.js" type="module"></script>
+  <script type="module">
+      import { initMap } from './app.js';
+      window.initMap = initMap;
+
+      window.api.getApiKey().then((apiKey) => {
+          const script = document.createElement("script");
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places&callback=initMap`;
+          script.async = true;
+          script.defer = true;
+          document.body.appendChild(script);
+      }).catch(err => {
+          console.error("Failed to load API key:", err);
+      });
+  </script>
 
   <script>
     window.api.getApiKey().then((apiKey) => {
