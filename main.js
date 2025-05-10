@@ -1,20 +1,22 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
-const fs = require("fs");
-const path = require("path");
-const apiCounter = require('./api-call-counter');
-const admin = require("firebase-admin");
+import { app, BrowserWindow, ipcMain } from 'electron';
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import admin from 'firebase-admin';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 let mainWindow;
 
-// Replace this with the actual path to your service account key JSON file
 const serviceAccountPath = path.join(__dirname, "c-o.json");
 
-// Initialize Firebase Admin SDK with the service account
 admin.initializeApp({
-  credential: admin.credential.cert(require(serviceAccountPath)),
+  credential: admin.credential.cert(JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8')))
 });
 
-const db = admin.firestore(); // Access Firestore
+const db = admin.firestore();
 
 app.whenReady().then(() => {
   mainWindow = new BrowserWindow({
@@ -29,20 +31,15 @@ app.whenReady().then(() => {
 
   mainWindow.loadFile("index.html");
 
-  // Reset API call counters when the app is ready
   apiCounter.resetPeriodCounters();
-
-  // Set API call limits
   apiCounter.setLimit('directions', 2500, 'daily');
   apiCounter.setLimit('geocoding', 2000, 'daily');
 });
 
-// Listen for API usage warnings
-ipcMain.on('api-limit-warning', (data) => {
+ipcMain.on('api-limit-warning', (event, data) => {
   console.warn(`API usage warning: ${data.endpoint} at ${data.usage}/${data.limit}`);
 });
 
-// Handle request for API key from renderer process
 ipcMain.handle("get-api-key", async () => {
   try {
     const config = JSON.parse(fs.readFileSync(path.join(__dirname, "config.json"), "utf-8"));
@@ -53,7 +50,6 @@ ipcMain.handle("get-api-key", async () => {
   }
 });
 
-// Firestore interaction: Add data to Firestore
 ipcMain.handle('firebase:addData', async (event, collectionName, data) => {
   try {
     const docRef = await db.collection(collectionName).add(data);
@@ -64,7 +60,6 @@ ipcMain.handle('firebase:addData', async (event, collectionName, data) => {
   }
 });
 
-// Firestore interaction: Fetch data from Firestore
 ipcMain.handle('firebase:getData', async (event, collectionName) => {
   try {
     const snapshot = await db.collection(collectionName).get();
@@ -88,7 +83,6 @@ app.on('activate', () => {
   }
 });
 
-// Sample API call (as you had in your example)
 function getDirections(origin, destination) {
   apiCounter.recordCall('directions', {
     cost: 1,

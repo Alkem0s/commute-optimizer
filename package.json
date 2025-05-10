@@ -2,8 +2,8 @@
   "name": "commute-optimizer",
   "version": "1.0.0",
   "description": "An Electron app that lets users create routes by placing dots on a Google Map",
-  "main": "main.js",
-  "type": "commonjs",
+  "main": "main.cjs",
+  "type": "module",
   "scripts": {
     "start": "electron ."
   },

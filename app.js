@@ -17,6 +17,11 @@ let test_markers = [
     { lat: 38.471163708279626, lng: 27.11990976548659 },
     { lat: 38.46847571099811, lng: 27.164541723494402 }
 ];
+
+function getMarkers() {
+    
+}
+
 // Initialize map
 function initMap() {
     geocoder = new google.maps.Geocoder();
@@ -84,6 +89,7 @@ function drawInitialRoutes(initial_markers) {
     }
 
     // Get all routes from the database
+
 
     drawInitialRoutes(test_markers);
 }
