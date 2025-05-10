@@ -2,7 +2,9 @@ import { getAllRoutes } from './api.js';
 import { initializeFirebase } from './firebase.js';
 
 let map;
-let markers = []; // Array to store route markers
+let markers = []; // Array to store route markers for manual markers
+let routeMarkers = []; // Array to store arrays of markers for each route
+let routePolylines = []; // Array to store polylines for each route
 let includedMarkers = [];
 let specialMarker = null; // Special marker instance
 let specialMarkerMode = false; // Flag to toggle special marker mode
@@ -22,7 +24,7 @@ let test_markers = [
 ];
 
 // Initialize map
-function initMap() {
+export function initMap() {
     geocoder = new google.maps.Geocoder();
     infoWindow = new google.maps.InfoWindow();
 
@@ -76,38 +78,147 @@ function initMap() {
 
 async function initMarkers() {
     await initializeFirebase();
-    let initial_markers = await getMarkersFromRoute("KSK1");
-    drawInitialRoutes(initial_markers);
+    let routes = await getDatabaseMarkers();
+    drawInitialRoutes(routes);
 }
 
-function drawInitialRoutes(initial_markers) {
-    initial_markers.forEach(marker => {
-        const latLng = new google.maps.LatLng(marker.lat, marker.lng);
-        addMarker(latLng);
-    });
-    if (markers.length > 1) {
-        calculateRoute(markers, false);
+function drawInitialRoutes(routes) {
+    // For manual markers (backward compatibility)
+    if (Array.isArray(routes) && routes.length > 0 && !routes[0].markers) {
+        routes.forEach(marker => {
+            const latLng = new google.maps.LatLng(marker.lat, marker.lng);
+            addMarker(latLng);
+        });
+        if (markers.length > 1) {
+            calculateRoute(markers, false);
+        }
+        return;
     }
+
+    // For multiple routes
+    routes.forEach((route, routeIndex) => {
+        // Create a new array to store this route's markers
+        const currentRouteMarkers = [];
+        routeMarkers.push(currentRouteMarkers);
+        
+        // Create markers for this route
+        route.markers.forEach(markerData => {
+            const latLng = new google.maps.LatLng(markerData.lat, markerData.lng);
+            const marker = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                draggable: false, // Database routes are not draggable
+                label: (currentRouteMarkers.length + 1).toString(),
+            });
+            
+            currentRouteMarkers.push(marker);
+            
+            // Add listener for info window
+            marker.addListener('click', () => {
+                infoWindow.setContent(`<div>
+                    <strong>Route ${routeIndex + 1}, Marker ${currentRouteMarkers.length}</strong><br>
+                    Lat: ${latLng.lat().toFixed(6)}<br>
+                    Lng: ${latLng.lng().toFixed(6)}
+                </div>`);
+                infoWindow.open(map, marker);
+            });
+        });
+        
+        // Calculate and draw the route if there are enough markers
+        if (currentRouteMarkers.length > 1) {
+            calculateRouteForIndex(routeIndex);
+        }
+    });
 }
 
-//get markers from route
-async function getMarkersFromRoute(routeName) {
+// Calculate and draw a route for a specific route index
+function calculateRouteForIndex(routeIndex) {
+    if (routeIndex < 0 || routeIndex >= routeMarkers.length) return;
+    
+    const currentRouteMarkers = routeMarkers[routeIndex];
+    if (currentRouteMarkers.length < 2) return;
+    
+    // Use a custom color for each route based on index
+    const routeColors = [
+        '#4285F4', // Blue
+        '#DB4437', // Red
+        '#F4B400', // Yellow
+        '#0F9D58', // Green
+        '#9C27B0', // Purple
+        '#FF9800', // Orange
+        '#795548', // Brown
+        '#607D8B', // Gray
+        '#2196F3', // Light Blue
+        '#E91E63'  // Pink
+    ];
+    
+    const routeColor = routeColors[routeIndex % routeColors.length];
+    
+    // Calculate the route with a specific color
+    calculateRoute(currentRouteMarkers, false, routeColor, routeIndex);
+}
+
+async function getDatabaseMarkers() {
     try {
         let allRoutes = await getAllRoutes();
-        const route = allRoutes[routeName];
-        if (!route || !Array.isArray(route.STOPS)) {
-        throw new Error(`Route '${routeName}' does not exist or has no STOPS`);
+        let routesArray = [];
+
+        // Check if allRoutes is an object
+        if (typeof allRoutes === 'object' && allRoutes !== null && !Array.isArray(allRoutes)) {
+            // Convert object to array of routes
+            for (const routeId in allRoutes) {
+                const route = allRoutes[routeId];
+                if (route && Array.isArray(route.STOPS)) {
+                    const markers = route.STOPS.map(stop => ({
+                        lat: stop.LAT,
+                        lng: stop.LONG,
+                    }));
+                    
+                    routesArray.push({
+                        id: routeId,
+                        name: route.NAME || `Route ${routeId}`,
+                        markers: markers
+                    });
+                }
+            }
+        } else if (Array.isArray(allRoutes)) {
+            // Handle if allRoutes is already an array
+            for (let i = 0; i < allRoutes.length; i++) {
+                const route = allRoutes[i];
+                if (route && Array.isArray(route.STOPS)) {
+                    const markers = route.STOPS.map(stop => ({
+                        lat: stop.LAT,
+                        lng: stop.LONG,
+                    }));
+                    
+                    routesArray.push({
+                        id: i.toString(),
+                        name: route.NAME || `Route ${i}`,
+                        markers: markers
+                    });
+                }
+            }
         }
 
-        const markers = route.STOPS.map(stop => ({
-        lat: stop.LAT,
-        lng: stop.LONG,
-        }));
+        // If no valid routes found, try test_markers as a fallback
+        if (routesArray.length === 0) {
+            console.warn("No valid routes found in database, using test markers");
+            routesArray.push({
+                id: "test",
+                name: "Test Route",
+                markers: test_markers
+            });
+        }
 
-        return markers;
+        return routesArray;
     } catch (error) {
         console.error("Error transforming stops into markers:", error);
-        return [];
+        // Return test markers as fallback
+        return [{
+            id: "test",
+            name: "Test Route",
+            markers: test_markers
+        }];
     }
 }
 
@@ -367,173 +478,7 @@ function updatePlacesList(location, index, isSpecialMarker = false) {
     });
 }
 
-const distanceCache = new Map();
-const pendingPromises = new Map();
-
-/**
- * Optimizes vehicle routes using your existing distance calculation API
- * @param {Array<Location>} locations - Passenger locations
- * @param {Array<Vehicle>} vehicles - Vehicles with capacity
- * @param {number} walkingDistance - Max walking radius in meters
- * @returns {Promise<Array<Location>>} Optimized stops
- */
-async function optimizeRoute(locations, vehicles, walkingDistance) {
-    // Validate input
-    if (!locations.every(l => 'lat' in l && 'lng' in l)) {
-        throw new Error('Invalid location format');
-    }
-
-    // Reset caches for fresh calculations
-    distanceCache.clear();
-    pendingPromises.clear();
-
-    // Cluster passengers using actual route distances
-    const clusters = await clusterPassengers(locations, walkingDistance);
-    const clusterCenters = calculateClusterCenters(clusters);
-    
-    // Build distance matrix using your API
-    const distanceMatrix = await buildDistanceMatrix(clusterCenters);
-
-    // Prepare input for OR-Tools
-    const input = {
-        clusters: {
-            centers: clusterCenters,
-            members: clusters,
-        },
-        passengers: locations,
-        vehicleCapacities: vehicles.map(v => v.capacity),
-        walkingRadius: walkingDistance,
-        distanceMatrix: distanceMatrix
-    };
-
-    return executePythonOptimizer(input);
-}
-
-function generateCacheKey(a, b, mode) {
-    return `${a.lat.toFixed(6)}:${a.lng.toFixed(6)}|${
-        b.lat.toFixed(6)}:${b.lng.toFixed(6)}|${mode}`;
-}
-
-// Enhanced caching layer with concurrency control
-async function cachedRouteDistance(a, b, mode) {
-    const key = generateCacheKey(a, b, mode);
-    const reverseKey = generateCacheKey(b, a, mode);
-
-    // Check existing cache
-    if (distanceCache.has(key)) return distanceCache.get(key);
-    
-    // Check pending promises
-    if (pendingPromises.has(key)) {
-        return pendingPromises.get(key);
-    }
-
-    // Create new request promise
-    const promise = (async () => {
-        try {
-            const distance = await calculateRouteDistanceCoords(
-                a.lat, a.lng, b.lat, b.lng, mode
-            );
-            
-            // Cache both directions if symmetrical
-            if (mode === 'WALKING') {
-                distanceCache.set(key, distance);
-                distanceCache.set(reverseKey, distance);
-            } else {
-                distanceCache.set(key, distance);
-            }
-            
-            return distance;
-        } finally {
-            pendingPromises.delete(key);
-        }
-    })();
-
-    // Store pending promise
-    pendingPromises.set(key, promise);
-    
-    return promise;
-}
-
-
-// Modified helper functions using cached distances
-async function clusterPassengers(locations, radius) {
-    const clusters = [];
-    const visited = new Set();
-    
-    for (const [i, loc] of locations.entries()) {
-        if (visited.has(i)) continue;
-        
-        const cluster = [loc];
-        visited.add(i);
-        
-        // Parallelize distance checks for performance
-        const distancePromises = [];
-        const candidates = [];
-        
-        // Find potential cluster members
-        for (let j = i + 1; j < locations.length; j++) {
-            if (visited.has(j)) continue;
-            candidates.push(j);
-            distancePromises.push(
-                cachedRouteDistance(loc, locations[j], 'WALKING')
-            );
-        }
-
-        // Process all distances at once
-        const distances = await Promise.all(distancePromises);
-        
-        // Add qualifying members to cluster
-        distances.forEach((distance, idx) => {
-            if (distance <= radius) {
-                const j = candidates[idx];
-                cluster.push(locations[j]);
-                visited.add(j);
-            }
-        });
-        
-        clusters.push(cluster);
-    }
-    
-    return clusters;
-}
-
-function calculateClusterCenters(clusters) {
-    return clusters.map(cluster => {
-        const avgLat = cluster.reduce((sum, l) => sum + l.lat, 0) / cluster.length;
-        const avgLng = cluster.reduce((sum, l) => sum + l.lng, 0) / cluster.length;
-        return { lat: avgLat, lng: avgLng };
-    });
-}
-
-async function buildDistanceMatrix(centers) {
-    const matrix = [];
-    const requests = [];
-    
-    // Pre-generate all requests
-    for (const source of centers) {
-        const rowRequests = centers.map(target => 
-            cachedRouteDistance(source, target, 'DRIVE')
-        );
-        requests.push(Promise.all(rowRequests));
-    }
-    
-    // Execute all rows in parallel
-    const results = await Promise.all(requests);
-    results.forEach(row => matrix.push(row));
-    
-    return matrix;
-}
-
-/**
- * Executes the compiled OR-Tools optimizer executable
- * @param {Object} input - Input data for optimization
- * @returns {Promise<Object>} Optimized routes
- */
-async function executePythonOptimizer(input) {
-  return window.optimizer.runOptimizer(input);
-}
-
-async function calculateRoute(routeMarkers, isSpecialRoute = false) {
+async function calculateRoute(routeMarkers, isSpecialRoute = false, routeColor = '#4285F4', routeIndex = -1) {
     if (routeMarkers.length < 2) {
         alert('Please add at least two markers');
         return;
@@ -546,8 +491,13 @@ async function calculateRoute(routeMarkers, isSpecialRoute = false) {
             closestRoutePolyline = null;
         }
 
-        // Clear the mainRoutePolyline if needed
-        if (!isSpecialRoute && mainRoutePolyline) {
+        // If this is a specific route index, clear its existing polyline
+        if (routeIndex >= 0 && routePolylines[routeIndex]) {
+            routePolylines[routeIndex].setMap(null);
+            routePolylines[routeIndex] = null;
+        }
+        // Clear the mainRoutePolyline for manual markers
+        else if (!isSpecialRoute && mainRoutePolyline && routeIndex < 0) {
             mainRoutePolyline.setMap(null);
             mainRoutePolyline = null;
         }
@@ -574,9 +524,11 @@ async function calculateRoute(routeMarkers, isSpecialRoute = false) {
             };
         });
         
-        // Record each routeMarker to includedMarkers
-        includedMarkers = [...routeMarkers];
-        console.log(includedMarkers);
+        // Record each routeMarker to includedMarkers if it's the manual route
+        if (routeIndex < 0) {
+            includedMarkers = [...routeMarkers];
+            console.log(includedMarkers);
+        }
 
         // Format the request body according to the Routes API v2 documentation
         const requestBody = {
@@ -645,15 +597,28 @@ async function calculateRoute(routeMarkers, isSpecialRoute = false) {
             
             // Append results for each route to the result section
             const resultContainer = document.getElementById('result');
-            const routeLabel = isSpecialRoute ? 'Special Route' : 'Main Route';
+            
+            // Determine route label based on type
+            let routeLabel;
+            if (isSpecialRoute) {
+                routeLabel = 'Special Route';
+            } else if (routeIndex >= 0) {
+                routeLabel = `Route ${routeIndex + 1}`;
+            } else {
+                routeLabel = 'Main Route';
+            }
+
+            // Generate a unique class for this route
+            const routeClass = isSpecialRoute ? 'special-route' : 
+                               (routeIndex >= 0 ? `db-route-${routeIndex}` : 'main-route');
 
             // Check if the route already exists (using a unique ID or class)
-            let routeDiv = document.querySelector(`.route-info.${isSpecialRoute ? 'special-route' : 'main-route'}`);
+            let routeDiv = document.querySelector(`.route-info.${routeClass}`);
 
             if (!routeDiv) {
                 // Create a new route div if it doesn't exist
                 routeDiv = document.createElement('div');
-                routeDiv.className = `route-info ${isSpecialRoute ? 'special-route' : 'main-route'}`;
+                routeDiv.className = `route-info ${routeClass}`;
                 resultContainer.appendChild(routeDiv);
             }
 
@@ -665,42 +630,33 @@ async function calculateRoute(routeMarkers, isSpecialRoute = false) {
                 ${waypointOrder.length > 0 ? `Optimized waypoint order: ${waypointOrder.join(', ')}` : 'Direct route calculated.'}
             `;
 
-
             // Draw the route on the map using a Polyline
             if (route.polyline && route.polyline.encodedPolyline) {
                 const decodedPath = decodePolyline(route.polyline.encodedPolyline);
                 
-                // If it's a special route, draw it with a different color (e.g., red)
+                // Create polyline based on route type
+                let polyline = new google.maps.Polyline({
+                    path: decodedPath,
+                    geodesic: true,
+                    strokeColor: routeColor,
+                    strokeOpacity: 1.0,
+                    strokeWeight: 4,
+                    map: map
+                });
+
+                // Store the polyline based on route type
                 if (isSpecialRoute) {
-                    closestRoutePolyline = new google.maps.Polyline({
-                        path: decodedPath,
-                        geodesic: true,
-                        strokeColor: '#FF0000',  // Red color for the special route
-                        strokeOpacity: 1.0,
-                        strokeWeight: 4,
-                        map: map
-                    });
-
-                    // Adjust map bounds to show the entire route
-                    const bounds = new google.maps.LatLngBounds();
-                    decodedPath.forEach(point => bounds.extend(point));
-                    map.fitBounds(bounds);
+                    closestRoutePolyline = polyline;
+                } else if (routeIndex >= 0) {
+                    routePolylines[routeIndex] = polyline;
                 } else {
-                    // For the main route, use the default color
-                    mainRoutePolyline = new google.maps.Polyline({
-                        path: decodedPath,
-                        geodesic: true,
-                        strokeColor: '#4285F4', // Blue color for the main route
-                        strokeOpacity: 1.0,
-                        strokeWeight: 4,
-                        map: map
-                    });
-
-                    // Adjust map bounds to show the entire route
-                    const bounds = new google.maps.LatLngBounds();
-                    decodedPath.forEach(point => bounds.extend(point));
-                    map.fitBounds(bounds);
+                    mainRoutePolyline = polyline;
                 }
+
+                // Adjust map bounds to show the entire route
+                const bounds = new google.maps.LatLngBounds();
+                decodedPath.forEach(point => bounds.extend(point));
+                map.fitBounds(bounds);
             }
         } else {
             throw new Error('No routes found');
@@ -710,14 +666,21 @@ async function calculateRoute(routeMarkers, isSpecialRoute = false) {
         alert('Could not calculate route: ' + error.message);
         
         // Fall back to a simpler approach as a last resort
-        fallbackDrawPolyline();
+        if (routeIndex >= 0) {
+            fallbackDrawPolyline(routeMarkers, routeColor, routeIndex);
+        } else {
+            fallbackDrawPolyline(routeMarkers, routeColor);
+        }
     }
 }
 
 
 // Fallback function to draw a simple route if all else fails
-function fallbackDrawPolyline(routeMarkers) {
-    if (mainRoutePolyline) {
+function fallbackDrawPolyline(routeMarkers, routeColor = '#FF0000', routeIndex = -1) {
+    // Clear appropriate polyline
+    if (routeIndex >= 0 && routePolylines[routeIndex]) {
+        routePolylines[routeIndex].setMap(null);
+    } else if (mainRoutePolyline && routeIndex < 0) {
         mainRoutePolyline.setMap(null);
     }
     
@@ -725,14 +688,21 @@ function fallbackDrawPolyline(routeMarkers) {
     const path = routeMarkers.map(marker => marker.getPosition());
     
     // Draw a simple polyline
-    mainRoutePolyline = new google.maps.Polyline({
+    const polyline = new google.maps.Polyline({
         path: path,
         geodesic: true,
-        strokeColor: '#FF0000',
+        strokeColor: routeColor,
         strokeOpacity: 0.8,
         strokeWeight: 3,
         map: map
     });
+    
+    // Store the polyline appropriately
+    if (routeIndex >= 0) {
+        routePolylines[routeIndex] = polyline;
+    } else {
+        mainRoutePolyline = polyline;
+    }
     
     // Fit bounds to show all markers
     const bounds = new google.maps.LatLngBounds();
@@ -745,8 +715,22 @@ function fallbackDrawPolyline(routeMarkers) {
         totalDistance += google.maps.geometry.spherical.computeDistanceBetween(path[i], path[i+1]);
     }
     
-    document.getElementById('result').innerHTML = `
-        <p><strong>FALLBACK MODE: Using straight-line distance</strong></p>
+    // Determine route label
+    const routeLabel = routeIndex >= 0 ? `Route ${routeIndex + 1}` : 'Main Route';
+    const routeClass = routeIndex >= 0 ? `db-route-${routeIndex}` : 'main-route';
+    
+    // Add or update result information
+    const resultContainer = document.getElementById('result');
+    let routeDiv = document.querySelector(`.route-info.${routeClass}`);
+    
+    if (!routeDiv) {
+        routeDiv = document.createElement('div');
+        routeDiv.className = `route-info ${routeClass}`;
+        resultContainer.appendChild(routeDiv);
+    }
+    
+    routeDiv.innerHTML = `
+        <strong>${routeLabel} (FALLBACK MODE)</strong><br>
         <p>Total distance: ${(totalDistance / 1000).toFixed(2)} km</p>
         <p>Note: This is an approximation; optimization not available in fallback mode.</p>
     `;
@@ -787,5 +771,4 @@ function decodePolyline(encodedPolyline) {
     return points;
 }
 
-window.initMap = initMap();
 initMarkers();
