@@ -21,34 +21,8 @@ let test_markers = [
     { lat: 38.46847571099811, lng: 27.164541723494402 }
 ];
 
-//get markers from route
-async function getMarkersFromRoute(routeName) {
-    try {
-      let allRoutes = await getAllRoutes();
-      console.log("and this is all routes", allRoutes);
-      const route = allRoutes[routeName]; // Access specific route
-      console.log("and this is all routes", allRoutes);
-      if (!route || !Array.isArray(route.STOPS)) {
-        throw new Error(`Route '${routeName}' does not exist or has no STOPS`);
-      }
-  
-      const markers = route.STOPS.map(stop => ({
-        lat: stop.LAT,
-        lng: stop.LONG,
-      }));
-  
-      return markers;
-    } catch (error) {
-      console.error("Error transforming stops into markers:", error);
-      return [];
-    }
-  }  
-
 // Initialize map
-async function initMap() {
-    await initializeFirebase();
-    test_markers = await getMarkersFromRoute("KSK1");
-    console.log("and this is the test markers", test_markers);
+function initMap() {
     geocoder = new google.maps.Geocoder();
     infoWindow = new google.maps.InfoWindow();
 
@@ -98,10 +72,12 @@ async function initMap() {
         }
     });
     document.getElementById('toggleSpecialMarker').addEventListener('click', toggleSpecialMarkerMode);
+}
 
-    // Get all routes from the database
-
-    drawInitialRoutes(test_markers);
+async function initMarkers() {
+    await initializeFirebase();
+    let initial_markers = await getMarkersFromRoute("KSK1");
+    drawInitialRoutes(initial_markers);
 }
 
 function drawInitialRoutes(initial_markers) {
@@ -111,6 +87,27 @@ function drawInitialRoutes(initial_markers) {
     });
     if (markers.length > 1) {
         calculateRoute(markers, false);
+    }
+}
+
+//get markers from route
+async function getMarkersFromRoute(routeName) {
+    try {
+        let allRoutes = await getAllRoutes();
+        const route = allRoutes[routeName];
+        if (!route || !Array.isArray(route.STOPS)) {
+        throw new Error(`Route '${routeName}' does not exist or has no STOPS`);
+        }
+
+        const markers = route.STOPS.map(stop => ({
+        lat: stop.LAT,
+        lng: stop.LONG,
+        }));
+
+        return markers;
+    } catch (error) {
+        console.error("Error transforming stops into markers:", error);
+        return [];
     }
 }
 
@@ -790,4 +787,5 @@ function decodePolyline(encodedPolyline) {
     return points;
 }
 
-window.initMap = await initMap;
+window.initMap = initMap();
+initMarkers();
