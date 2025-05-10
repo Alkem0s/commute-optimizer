@@ -1,3 +1,6 @@
+import { getAllRoutes } from './api.js';
+import { initializeFirebase } from './firebase.js';
+
 let map;
 let markers = []; // Array to store route markers
 let includedMarkers = [];
@@ -18,8 +21,34 @@ let test_markers = [
     { lat: 38.46847571099811, lng: 27.164541723494402 }
 ];
 
+//get markers from route
+async function getMarkersFromRoute(routeName) {
+    try {
+      let allRoutes = await getAllRoutes();
+      console.log("and this is all routes", allRoutes);
+      const route = allRoutes[routeName]; // Access specific route
+      console.log("and this is all routes", allRoutes);
+      if (!route || !Array.isArray(route.STOPS)) {
+        throw new Error(`Route '${routeName}' does not exist or has no STOPS`);
+      }
+  
+      const markers = route.STOPS.map(stop => ({
+        lat: stop.LAT,
+        lng: stop.LONG,
+      }));
+  
+      return markers;
+    } catch (error) {
+      console.error("Error transforming stops into markers:", error);
+      return [];
+    }
+  }  
+
 // Initialize map
-function initMap() {
+async function initMap() {
+    await initializeFirebase();
+    test_markers = await getMarkersFromRoute("KSK1");
+    console.log("and this is the test markers", test_markers);
     geocoder = new google.maps.Geocoder();
     infoWindow = new google.maps.InfoWindow();
 
@@ -761,4 +790,4 @@ function decodePolyline(encodedPolyline) {
     return points;
 }
 
-window.initMap = initMap;
+window.initMap = await initMap;
