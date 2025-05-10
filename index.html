@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Optimal Route Calculator</title>
   <link rel="stylesheet" href="style.css">
   <style>
@@ -158,6 +159,9 @@ function loadPage(url) {
   document.getElementById("sidebar").classList.remove("open");
   document.querySelectorAll(".screen").forEach(el => el.style.display = "none");
 
+  // Clear existing map scripts to prevent duplicates
+  document.querySelectorAll('script[src*="maps.googleapis.com"]').forEach(script => script.remove());
+
   fetch(url)
     .then(response => response.text())
     .then(html => {
@@ -165,23 +169,22 @@ function loadPage(url) {
       container.innerHTML = html;
       container.style.display = "block";
 
-      // özel: eğer sayfa api-test ise, JS modülünü yükle
+      // Remove previous API test scripts
+      document.querySelectorAll('script[src="api_test.js"]').forEach(script => script.remove());
+
+      // Dynamically load scripts only for API test
       if (url === "api-test.html") {
         const script = document.createElement("script");
         script.type = "module";
         script.src = "api_test.js";
         document.body.appendChild(script);
+      } else if (url === "map.html") {
+        // Re-initialize the map ONLY if needed
+        window.initMap(); 
       }
     })
-    .catch(err => {
-      const container = document.getElementById("main-content");
-      container.innerHTML = "<p>Failed to load page.</p>";
-      container.style.display = "block";
-      console.error(err);
-    });
+    .catch(err => console.error("Page load error:", err));
 }
-
-  
 
   </script>
 </body>

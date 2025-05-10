@@ -2,7 +2,12 @@
 import { initializeFirebase } from './firebase.js';
 import * as api from './api.js';
 
+let isFirebaseInitialized = false;
+
 document.addEventListener('DOMContentLoaded', function() {
+    if (isFirebaseInitialized) return; // Prevent duplicate setup
+    isFirebaseInitialized = true;
+
     // Initialize Firebase when the page loads
     initializeFirebase().catch(error => {
         console.error("Failed to initialize Firebase:", error);
