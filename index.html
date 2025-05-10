@@ -1,128 +1,175 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <title>Commute Optimizer - Hoş Geldiniz</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: linear-gradient(135deg, #a9cce3, #a3e4d7, #45b39d);
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 20px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 1.2rem;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            background-color: white;
-            color: black;
-            font-weight: bold;
-            transition: 0.3s;
-            margin-bottom: 10px;
-        }
-        button:hover {
-            background-color: #a3e4d7;
-        }
-        #result {
-            background-color: rgba(255, 255, 255, 0.8);
-            color: #333;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
-            max-width: 80%;
-            max-height: 200px;
-            overflow-y: auto;
-            text-align: left;
-            display: none;
-        }
-        .api-test-container {
-            background-color: rgba(0, 0, 0, 0.2);
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        select {
-            padding: 10px;
-            font-size: 1rem;
-            margin-bottom: 10px;
-            width: 80%;
-            border-radius: 5px;
-            border: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Optimal Route Calculator</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* HAMBURGER MENU STİLİ */
+    .header {
+      background-color: white;
+      color: black;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 16px; 
+      padding: 3px 12px;  
+      height: 44px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .menu-icon {
+      font-size: 24px;
+      cursor: pointer;    
+      color: #1e1e2f;
+      position: relative;
+      z-index: 1100;
+    }
+
+    .sidebar {
+     position: fixed;
+     top: 0;
+     left: -250px;
+     width: 250px;
+     height: 100%;
+     background-color: white;
+     color: white;
+     padding: 80px 20px 20px 20px;
+     transition: left 0.3s ease;
+     z-index: 1000;
+    }
+
+    .sidebar.open {
+      left: 0;
+    }
+
+    .sidebar a {
+      display: block;
+      margin: 20px 0;
+      color: black;
+      text-decoration: none;
+    }
+
+    .sidebar a:hover {
+      text-decoration: underline;
+    }
+
+    .menu-icon {
+      font-size: 20px;
+      cursor: pointer;
+      color: #1e1e2f; 
+    }
+
+    .spacer {
+  flex: 1; 
+}
+.logo {
+  height: 50px;      
+  object-fit: contain;
+}
+
+    #map {
+      width: 100%;
+      height: 600px;
+    }
+  </style>
 </head>
 <body>
-    <div style="text-align: center;">
-        <h1>🌍 Hoş Geldiniz.</h1>
-        <p>Haritaya gitmek için aşağıdaki butona tıklayınız.</p>
-        <button onclick="window.location.href='map.html'">Haritayı Aç</button>
-        <p>Yolcu eklemek için aşağıdaki butona tıklayınız.</p>
-        <button onclick="window.location.href='add-passenger.html'">Yolcu Ekle</button>
-        <p>Yolcu listesini görüntülemek için aşağıdaki butona tıklayınız.</p>
-        <button onclick="window.location.href='passengers-list.html'">Yolcu Listesi</button>
-        <p>Veritabanı arayüzüne gitmek için aşağıdaki butona tıklayınız.</p>
-        <button onclick="window.location.href='db_frontend.html'">Veritabanı Arayüzü</button>
-        
-        <div class="api-test-container">
-            <h2>API Test Arayüzü</h2>
-            <form class="api-test-form">
-                <select id="api-method">
-                    <option value="">-- API Metodu Seçin --</option>
-                    <optgroup label="Yolcu İşlemleri">
-                        <option value="getAllPassengers">Tüm Yolcuları Getir</option>
-                        <option value="getPassenger">Yolcu Getir</option>
-                        <option value="setPassenger">Yolcu Ekle/Güncelle</option>
-                        <option value="deletePassenger">Yolcu Sil</option>
-                        <option value="searchPassengers">Yolcu Ara</option>
-                    </optgroup>
-                    <optgroup label="Rota İşlemleri">
-                        <option value="getAllRoutes">Tüm Rotaları Getir</option>
-                        <option value="getRoute">Rota Getir</option>
-                        <option value="setRoute">Rota Ekle/Güncelle</option>
-                        <option value="deleteRoute">Rota Sil</option>
-                        <option value="addPassengerToRoute">Rotaya Yolcu Ekle</option>
-                        <option value="removePassengerFromRoute">Rotadan Yolcu Çıkar</option>
-                    </optgroup>
-                    <optgroup label="Araç İşlemleri">
-                        <option value="getAllVehicles">Tüm Araçları Getir</option>
-                        <option value="getVehicle">Araç Getir</option>
-                        <option value="setVehicle">Araç Ekle/Güncelle</option>
-                        <option value="deleteVehicle">Araç Sil</option>
-                        <option value="assignVehicleToRoute">Rotaya Araç Ata</option>
-                    </optgroup>
-                </select>
-                <button type="submit">API'yi Test Et</button>
-            </form>
-        
-            <div id="result" style="display: none;"></div>
-        </div>
-        
+  <div class="header">
+    <div class="menu-icon" onclick="toggleSidebar()">☰</div>
+    <div class="spacer"></div>
+    <img src="images/logo.png" alt="Logo" class="logo">
+    
+  </div>
+
+  <div id="main-content" class="screen"></div>
+
+  <div class="sidebar" id="sidebar">
+    <a href="#" onclick="loadPage('add-passenger.html'); toggleSidebar(); ">Add Passenger</a>
+    <a href="#" onclick="loadPage('map.html'); toggleSidebar();">Map</a>
+    <a href="#" onclick="loadPage('api-test.html'); toggleSidebar();">API Test</a>
+    <a href="#">Statistics</a>
+    <a href="#">Settings</a>
+    <a href="#">About</a>
+  </div>
+
+  <div class="container">
+    <div id="map"></div>
+
+    <div class="places-container">
+      <h2>Selected Locations</h2>
+      <button id="toggleSpecialMarker">Toggle Special Marker</button>
+      <button id="calculate-route">Calculate Optimal Route</button>
+      <div id="places-list"></div>
+      <div id="result"></div>
     </div>
-    <script type="module" src="api_test.js"></script>
+
+    <div id="loading-screen">
+        <img src="images/world-globe.gif" alt="Loading..." class="loading-earth">
+        <p class="loading-text">
+            <span>L</span><span>o</span><span>a</span><span>d</span><span>i</span><span>n</span><span>g</span>
+            <span>&nbsp;</span>
+            <span>M</span><span>a</span><span>p</span>
+            <span>.</span><span>.</span><span>.</span>
+          </p>
+          
+      </div>
+      
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("open");
+    }
+  </script>
+
+  <script src="app.js" type="module"></script>
+
+  <script>
+    window.api.getApiKey().then((apiKey) => {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places&callback=initMap`;
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }).catch(err => {
+      console.error("Failed to load API key:", err);
+    });
+    window.addEventListener("load", () => {
+  setTimeout(() => {
+    document.getElementById("loading-screen").style.display = "none";
+  }, 2500);
+});
+
+function loadPage(url) {
+  document.getElementById("sidebar").classList.remove("open");
+  document.querySelectorAll(".screen").forEach(el => el.style.display = "none");
+
+  fetch(url)
+    .then(response => response.text())
+    .then(html => {
+      const container = document.getElementById("main-content");
+      container.innerHTML = html;
+      container.style.display = "block";
+
+      // özel: eğer sayfa api-test ise, JS modülünü yükle
+      if (url === "api-test.html") {
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "api_test.js";
+        document.body.appendChild(script);
+      }
+    })
+    .catch(err => {
+      const container = document.getElementById("main-content");
+      container.innerHTML = "<p>Failed to load page.</p>";
+      container.style.display = "block";
+      console.error(err);
+    });
+}
+
+  
+
+  </script>
 </body>
 </html>

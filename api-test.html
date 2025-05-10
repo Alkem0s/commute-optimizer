@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>API Test Arayüzü</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    h2 {
+      text-align: center;
+      color: #1e1e2f;
+    }
+    .api-test-container {
+      background-color: white;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    select {
+      padding: 10px;
+      font-size: 1rem;
+      margin-bottom: 20px;
+      width: 100%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #45b39d;
+      color: white;
+      font-weight: bold;
+      width: 100%;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #399180;
+    }
+    #result {
+      background-color: #f0f0f0;
+      color: #333;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="api-test-container">
+    <h2>API Test Arayüzü</h2>
+    <form class="api-test-form">
+      <select id="api-method">
+        <option value="">-- API Metodu Seçin --</option>
+        <optgroup label="Yolcu İşlemleri">
+          <option value="getAllPassengers">Tüm Yolcuları Getir</option>
+          <option value="getPassenger">Yolcu Getir</option>
+          <option value="setPassenger">Yolcu Ekle/Güncelle</option>
+          <option value="deletePassenger">Yolcu Sil</option>
+          <option value="searchPassengers">Yolcu Ara</option>
+        </optgroup>
+        <optgroup label="Rota İşlemleri">
+          <option value="getAllRoutes">Tüm Rotaları Getir</option>
+          <option value="getRoute">Rota Getir</option>
+          <option value="setRoute">Rota Ekle/Güncelle</option>
+          <option value="deleteRoute">Rota Sil</option>
+          <option value="addPassengerToRoute">Rotaya Yolcu Ekle</option>
+          <option value="removePassengerFromRoute">Rotadan Yolcu Çıkar</option>
+        </optgroup>
+        <optgroup label="Araç İşlemleri">
+          <option value="getAllVehicles">Tüm Araçları Getir</option>
+          <option value="getVehicle">Araç Getir</option>
+          <option value="setVehicle">Araç Ekle/Güncelle</option>
+          <option value="deleteVehicle">Araç Sil</option>
+          <option value="assignVehicleToRoute">Rotaya Araç Ata</option>
+        </optgroup>
+      </select>
+      <button type="submit">API'yi Test Et</button>
+    </form>
+    <div id="result" style="display:none;"></div>
+  </div>
+
+  
+</body>
+</html>
