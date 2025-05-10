@@ -53,5 +53,12 @@ contextBridge.exposeInMainWorld(
   }
 );
 
-// Log when preload script is executed
-console.log('Preload script loaded');
+contextBridge.exposeInMainWorld('optimization', {
+  runOptimizer: async (input) => {
+    try {
+      return await ipcRenderer.invoke('run-optimizer', input);
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+});

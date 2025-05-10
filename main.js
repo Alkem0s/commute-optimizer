@@ -4,6 +4,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import admin from 'firebase-admin';
+import { spawn } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,6 +19,53 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
+ipcMain.handle('run-optimizer', async (_, input) => {
+  return new Promise((resolve, reject) => {
+    const optimizerPath = path.join(
+      app.getAppPath(),
+      'optimizer' + (process.platform === 'win32' ? '.exe' : '')
+    );
+
+    const optimizerProcess = spawn(optimizerPath, [], {
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+
+    let result = '';
+    let errorOutput = '';
+
+    optimizerProcess.stdin.write(JSON.stringify(input));
+    optimizerProcess.stdin.end();
+
+    optimizerProcess.stdout.on('data', (data) => {
+      result += data.toString();
+    });
+
+    optimizerProcess.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+    });
+
+    optimizerProcess.on('close', (code) => {
+      if (code === 0) {
+        try {
+          resolve(JSON.parse(result));
+        } catch (e) {
+          reject(new Error(`Output parsing failed: ${e.message}`));
+        }
+      } else {
+        reject(new Error(`Optimizer failed (code ${code}): ${errorOutput}`));
+      }
+    });
+
+    optimizerProcess.on('error', (err) => {
+      if (err.code === 'ENOENT') {
+        reject(new Error('Optimizer executable not found. Check packaging configuration.'));
+      } else {
+        reject(err);
+      }
+    });
+  });
+});
+
 app.whenReady().then(() => {
   mainWindow = new BrowserWindow({
     width: 800,
@@ -30,14 +78,6 @@ app.whenReady().then(() => {
   });
 
   mainWindow.loadFile("index.html");
-
-  apiCounter.resetPeriodCounters();
-  apiCounter.setLimit('directions', 2500, 'daily');
-  apiCounter.setLimit('geocoding', 2000, 'daily');
-});
-
-ipcMain.on('api-limit-warning', (event, data) => {
-  console.warn(`API usage warning: ${data.endpoint} at ${data.usage}/${data.limit}`);
 });
 
 ipcMain.handle("get-api-key", async () => {
@@ -82,11 +122,3 @@ app.on('activate', () => {
     createWindow();
   }
 });
-
-function getDirections(origin, destination) {
-  apiCounter.recordCall('directions', {
-    cost: 1,
-    details: `Route from ${origin} to ${destination}`
-  });
-  // Perform the actual API call (not implemented here)
-}

@@ -18,10 +18,6 @@ let test_markers = [
     { lat: 38.46847571099811, lng: 27.164541723494402 }
 ];
 
-function getMarkers() {
-    
-}
-
 // Initialize map
 function initMap() {
     geocoder = new google.maps.Geocoder();
@@ -75,21 +71,6 @@ function initMap() {
     document.getElementById('toggleSpecialMarker').addEventListener('click', toggleSpecialMarkerMode);
 
     // Get all routes from the database
-
-    drawInitialRoutes(test_markers);
-}
-
-function drawInitialRoutes(initial_markers) {
-    initial_markers.forEach(marker => {
-        const latLng = new google.maps.LatLng(marker.lat, marker.lng);
-        addMarker(latLng);
-    });
-    if (markers.length > 1) {
-        calculateRoute(markers, false);
-    }
-
-    // Get all routes from the database
-
 
     drawInitialRoutes(test_markers);
 }
@@ -517,64 +498,13 @@ async function buildDistanceMatrix(centers) {
     return matrix;
 }
 
-const { spawn } = require('child_process');
-const path = require('path');
-const { app } = require('electron');
-
 /**
  * Executes the compiled OR-Tools optimizer executable
  * @param {Object} input - Input data for optimization
  * @returns {Promise<Object>} Optimized routes
  */
 async function executePythonOptimizer(input) {
-    return new Promise((resolve, reject) => {
-        // Get correct executable path for packaging
-        const optimizerPath = path.join(
-            process.resourcesPath || app.getAppPath(), 
-            'optimizer' + (process.platform === 'win32' ? '.exe' : '')
-        );
-
-        const optimizerProcess = spawn(optimizerPath, [], {
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
-
-        let result = '';
-        let errorOutput = '';
-
-        // Handle input/output
-        optimizerProcess.stdin.write(JSON.stringify(input));
-        optimizerProcess.stdin.end();
-
-        optimizerProcess.stdout.on('data', (data) => {
-            result += data.toString();
-        });
-
-        optimizerProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
-
-        // Handle process events
-        optimizerProcess.on('close', (code) => {
-            if (code === 0) {
-                try {
-                    const parsedResult = JSON.parse(result);
-                    resolve(parsedResult);
-                } catch (e) {
-                    reject(new Error(`Output parsing failed: ${e.message}`));
-                }
-            } else {
-                reject(new Error(`Optimizer failed (code ${code}): ${errorOutput}`));
-            }
-        });
-
-        optimizerProcess.on('error', (err) => {
-            if (err.code === 'ENOENT') {
-                reject(new Error('Optimizer executable not found. Check packaging configuration.'));
-            } else {
-                reject(err);
-            }
-        });
-    });
+  return window.optimizer.runOptimizer(input);
 }
 
 async function calculateRoute(routeMarkers, isSpecialRoute = false) {
@@ -830,18 +760,5 @@ function decodePolyline(encodedPolyline) {
     
     return points;
 }
-
-document.getElementById("addDataBtn").addEventListener("click", async () => {
-    // Example of collection name and data to add
-    const collectionName = "exampleCollection"; // Replace with your actual collection name
-    const data = { name: "John Doe", age: 30 }; // Replace with the actual data you want to add
-    
-    const result = await window.firebaseAPI.addData(collectionName, data);
-    if (result.success) {
-        alert("Document added with ID: " + result.id);
-    } else {
-        alert("Error: " + result.error);
-    }
-});
 
 window.initMap = initMap;
