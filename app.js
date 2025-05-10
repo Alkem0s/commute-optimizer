@@ -8,8 +8,15 @@ let closestRoutePolyline = null;
 let geocoder;
 let infoWindow;
 
-const { spawn } = require('child_process');
-
+let test_markers = [
+    { lat: 38.46595521912682, lng: 27.351150512695312 },
+    { lat: 38.45119988839858, lng: 27.24231719970703 },
+    { lat: 38.444967505761575, lng: 27.203536406792217 },
+    { lat: 38.466475687372274 , lng: 27.186370269096905 },
+    { lat: 38.46524998199707 , lng: 27.206427099470964 },
+    { lat: 38.471163708279626, lng: 27.11990976548659 },
+    { lat: 38.46847571099811, lng: 27.164541723494402 }
+];
 // Initialize map
 function initMap() {
     geocoder = new google.maps.Geocoder();
@@ -52,6 +59,7 @@ function initMap() {
 
             calculateRoute(markers, false);
             if (specialMarker) {
+                let closestMarker = findClosestMarker();
                 if (closestMarker) {
                     calculateRoute([specialMarker, findClosestMarker()], true);
                     updatePlacesList(specialMarker.getPosition(), 0, true);
@@ -60,9 +68,24 @@ function initMap() {
         }
     });
     document.getElementById('toggleSpecialMarker').addEventListener('click', toggleSpecialMarkerMode);
+
+    // Get all routes from the database
+
+    drawInitialRoutes(test_markers);
+}
+
+function drawInitialRoutes(initial_markers) {
+    initial_markers.forEach(marker => {
+        const latLng = new google.maps.LatLng(marker.lat, marker.lng);
+        addMarker(latLng);
+    });
+    if (markers.length > 1) {
+        calculateRoute(markers, false);
+    }
 }
 
 function addMarker(position) {
+    console.log(position.lat(), position.lng());
     if (specialMarkerMode) {
         let closestMarker = null;
         if (specialMarker) {
