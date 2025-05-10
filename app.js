@@ -60,7 +60,6 @@ function initMap() {
             calculateRoute(markers, false);
             if (specialMarker) {
                 let closestMarker = findClosestMarker();
-                let closestMarker = findClosestMarker();
                 if (closestMarker) {
                     calculateRoute([specialMarker, findClosestMarker()], true);
                     updatePlacesList(specialMarker.getPosition(), 0, true);
