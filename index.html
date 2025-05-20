@@ -70,20 +70,6 @@
       object-fit: contain;
     }
 
-    #map {
-      width: 100%;
-      height: 600px;
-    }
-    
-    /* Content container */
-    .content-container {
-      display: none;
-      padding: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    
-    /* Loading animation */
     #loading-screen {
       position: fixed;
       top: 0;
@@ -95,30 +81,28 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      z-index: 1200;
+      z-index: 9999;
     }
-    
+
     .loading-earth {
       width: 100px;
       height: 100px;
     }
-    
+
     .loading-text span {
       display: inline-block;
-      animation: bounce 1s infinite alternate;
+      animation: bounce 1s infinite;
     }
-    
+
     @keyframes bounce {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(-10px); }
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
     }
-    
-    .loading-text span:nth-child(2) { animation-delay: 0.1s; }
-    .loading-text span:nth-child(3) { animation-delay: 0.2s; }
-    .loading-text span:nth-child(4) { animation-delay: 0.3s; }
-    .loading-text span:nth-child(5) { animation-delay: 0.4s; }
-    .loading-text span:nth-child(6) { animation-delay: 0.5s; }
-    .loading-text span:nth-child(7) { animation-delay: 0.6s; }
+
+    .loading-text span:nth-child(1) { animation-delay: 0.1s; }
+    .loading-text span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-text span:nth-child(3) { animation-delay: 0.3s; }
+    /* Add more delays for each letter as needed */
   </style>
 </head>
 <body>
@@ -128,416 +112,95 @@
     <img src="images/logo.png" alt="Logo" class="logo">
   </div>
 
+  <div id="main-content" class="screen"></div>
+
   <div class="sidebar" id="sidebar">
-    <a href="#" data-page="add-passenger.html">Add Passenger</a>
-    <a href="#" data-page="map.html">Map</a>
-    <a href="#" data-page="api-test.html">API Test</a>
-    <a href="#" data-page="passengers-list.html">Passenger Database</a>
-    <a href="#" data-page="statistics.html">Statistics</a>
-    <a href="#" data-page="settings.html">Settings</a>
-    <a href="#" data-page="about.html">About</a>
+    <a href="#" onclick="loadPage('add-passenger.html'); toggleSidebar();">Add Passenger</a>
+    <a href="#" onclick="loadPage('map.html'); toggleSidebar();">Map</a>
+    <a href="#" onclick="loadPage('api-test.html'); toggleSidebar();">API Test</a>
+    <a href="#">Statistics</a>
+    <a href="#">Settings</a>
+    <a href="#">About</a>
   </div>
 
-  <!-- Main content area -->
-  <div id="main-content" class="content-container"></div>
-  
-  <!-- Map container -->
-  <div class="container" id="map-container">
-    <div id="map"></div>
-
-    <div class="places-container">
-      <h2>Selected Locations</h2>
-      <button id="toggleSpecialMarker">Toggle Special Marker</button>
-      <button id="calculate-route">Calculate Optimal Route</button>
-      <div id="places-list"></div>
-      <div id="result"></div>
-    </div>
+  <div id="loading-screen">
+    <img src="images/world-globe.gif" alt="Loading..." class="loading-earth">
+    <p class="loading-text">
+      <span>L</span><span>o</span><span>a</span><span>d</span><span>i</span><span>n</span><span>g</span>
+      <span>&nbsp;</span>
+      <span>M</span><span>a</span><span>p</span>
+      <span>.</span><span>.</span><span>.</span>
+    </p>
   </div>
 
-  <!-- Loading screen -->
-<div id="loading-screen">
-  <img src="images/loading-earth.gif" alt="Loading" class="loading-earth">
-  <div class="loading-text">
-    <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
-  </div>
-</div>
-
-  <!-- Scripts -->
   <script>
-    // Toggle sidebar function
     function toggleSidebar() {
       document.getElementById("sidebar").classList.toggle("open");
     }
-    
-    // Page router system
-    document.addEventListener('DOMContentLoaded', function() {
-      // Set up navigation event listeners
-      document.querySelectorAll('.sidebar a').forEach(link => {
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          const pagePath = this.getAttribute('data-page');
-          if (pagePath) {
-            navigateToPage(pagePath);
-            toggleSidebar();
-          }
-        });
-      });
-      
-      // Show loading screen on initial load
-      setTimeout(() => {
-        document.getElementById("loading-screen").style.display = "none";
-        
-        // Show map container by default
-        document.getElementById("map-container").style.display = "block";
-      }, 1500);
-    });
 
-    // Function to navigate to different pages
-    function navigateToPage(pageName) {
-      console.log("Navigating to:", pageName);
-      
-      // Show loading animation
-      document.getElementById("loading-screen").style.display = "flex";
-      
-      // Hide all containers
-      document.getElementById("main-content").style.display = "none";
-      document.getElementById("map-container").style.display = "none";
-      
-      // Switch based on page name
-      switch(pageName) {
-        case 'map.html':
-          // Show map container
-          document.getElementById("map-container").style.display = "block";
-          // Reinitialize the map if needed
-          if (typeof window.initMap === 'function') {
-            window.initMap();
-          }
-          break;
-          
-        case 'passengers-list.html':
-          // Display passengers list 
-          loadStaticContent('passengers-list', function() {
-            // Load specific script
-            loadScript('passengers-list.js');
-          });
-          break;
-          
-        case 'api-test.html':
-          // Display API test page
-          loadStaticContent('api-test', function() {
-            const container = document.getElementById("main-content");
-            container.innerHTML = `
-              <div class="container">
-                <h1>API Test Console</h1>
-                <div class="api-controls">
-                  <div class="control-group">
-                    <label for="apiEndpoint">API Endpoint:</label>
-                    <select id="apiEndpoint">
-                      <option value="getPassengers">Get All Passengers</option>
-                      <option value="addPassenger">Add New Passenger</option>
-                      <option value="updatePassenger">Update Passenger</option>
-                      <option value="deletePassenger">Delete Passenger</option>
-                      <option value="getOptimalRoute">Calculate Optimal Route</option>
-                    </select>
-                  </div>
-                  
-                  <div class="control-group">
-                    <label for="requestPayload">Request Payload (JSON):</label>
-                    <textarea id="requestPayload" rows="10" placeholder="Enter JSON payload..."></textarea>
-                  </div>
-                  
-                  <button id="sendRequest" class="btn-primary">Send Request</button>
-                </div>
-                
-                <div class="response-section">
-                  <h2>Response</h2>
-                  <div class="loader" id="apiLoader" style="display: none;">Loading...</div>
-                  <pre id="responseOutput"></pre>
-                </div>
-              </div>
-              
-              <style>
-                .container {
-                  max-width: 900px;
-                  margin: 0 auto;
-                  padding: 20px;
-                }
-                .api-controls {
-                  background-color: #f5f5f5;
-                  padding: 20px;
-                  border-radius: 5px;
-                  margin-bottom: 20px;
-                }
-                .control-group {
-                  margin-bottom: 15px;
-                }
-                label {
-                  display: block;
-                  margin-bottom: 5px;
-                  font-weight: bold;
-                }
-                select, textarea {
-                  width: 100%;
-                  padding: 8px;
-                  border: 1px solid #ddd;
-                  border-radius: 4px;
-                }
-                .btn-primary {
-                  background-color: #4285f4;
-                  color: white;
-                  padding: 10px 15px;
-                  border: none;
-                  border-radius: 4px;
-                  cursor: pointer;
-                }
-                .btn-primary:hover {
-                  background-color: #3367d6;
-                }
-                .response-section {
-                  background-color: #f9f9f9;
-                  padding: 20px;
-                  border-radius: 5px;
-                }
-                #responseOutput {
-                  background-color: #333;
-                  color: #f0f0f0;
-                  padding: 15px;
-                  border-radius: 4px;
-                  overflow-x: auto;
-                  min-height: 100px;
-                }
-              </style>
-            `;
-            
-            // Load specific script
-            loadScript('api_test.js', 'module');
-          });
-          break;
-          
-        case 'add-passenger.html':
-          // Display add passenger page
-          loadStaticContent('add-passenger');
-          break;
-          
-        case 'statistics.html':
-          // Display statistics page
-          loadStaticContent('statistics');
-          break;
-          
-        case 'settings.html':
-          // Display settings page
-          loadStaticContent('settings');
-          break;
-          
-        case 'about.html':
-          // Display about page
-          loadStaticContent('about');
-          break;
-          
-        default:
-          // For unknown pages, show error
-          document.getElementById("main-content").innerHTML = `
-            <div style="padding: 20px; text-align: center;">
-              <h2>Page Not Found</h2>
-              <p>The requested page "${pageName}" could not be found.</p>
-            </div>
-          `;
-          document.getElementById("main-content").style.display = "block";
-      }
-      
-      // Hide loading screen
-      document.getElementById("loading-screen").style.display = "none";
-    }
-    
-    // Function to load static content
-    function loadStaticContent(pageName, callback) {
-      // For passengers-list, we have the content already
-      if (pageName === 'passengers-list') {
-        const container = document.getElementById("main-content");
-        container.innerHTML = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Passenger List</title>
-    <style>
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 20px;
-        }
-        .search-container {
-            margin-bottom: 20px;
-        }
-        #searchInput {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .edit-btn {
-            background-color: #4CAF50;
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            cursor: pointer;
-        }
-        /* Edit Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 1000;
-        }
-        .modal-content {
-            background-color: #fff;
-            margin: 15% auto;
-            padding: 20px;
-            width: 600px;
-            border-radius: 5px;
-        }
-        .modal-form-group {
-            margin-bottom: 15px;
-        }
-    </style>
-    <div class="container">
-        <h1>Passenger List</h1>
-        
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search passengers...">
-        </div>
+    function loadPage(url) {
+      document.getElementById("sidebar").classList.remove("open");
+      document.querySelectorAll(".screen").forEach(el => el.style.display = "none");
 
-        <table id="passengersTable">
-            <thead>
-                <tr>
-                    <th>Internal Name</th>
-                    <th>Destination Code</th>
-                    <th>Destination Description</th>
-                    <th>Service Usage</th>
-                    <th>Service Number</th>
-                    <th>Pickup Time</th>
-                    <th>Drop-off Time</th>
-                    <th>Service Order</th>
-                    <th>Service Address</th>
-                    <th>Residence Distance</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-
-        <!-- Edit Modal -->
-        <div id="editModal" class="modal">
-            <div class="modal-content">
-                <h2>Edit Passenger</h2>
-                <form id="editForm">
-                    <input type="hidden" id="editDocumentId">
-                    
-                    <div class="modal-form-group">
-                        <label>Internal Display Name:</label>
-                        <input type="text" id="editDahiliGosterimAdi" required>
-                    </div>
-                    
-                    <!-- Add all other fields similarly -->
-                    <div class="modal-form-group">
-                        <label>Destination Code:</label>
-                        <input type="text" id="editGiderYeri" required>
-                    </div>
-                    
-                    <div class="modal-form-group">
-                        <label>Destination Description:</label>
-                        <input type="text" id="editGiderYeriTanim" required>
-                    </div>
-                    
-                    <div class="modal-form-group">
-                        <label>Service Usage:</label>
-                        <select id="editServisKullanimi" required>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Add remaining fields following the same pattern -->
-                    
-                    <button type="submit" class="edit-btn">Save Changes</button>
-                    <button type="button" onclick="closeEditModal()">Cancel</button>
-                </form>
-            </div>
-        </div>
-    </div>
-`;
-        container.style.display = "block";
-        if (callback) callback();
-        return;
-      }
-      
-      // For other pages, show generic content
+      // Clear main content first
       const container = document.getElementById("main-content");
-      container.innerHTML = `
-        <div style="padding: 20px; text-align: center;">
-          <h2>${capitalize(pageName)} Page</h2>
-          <p>This is the ${pageName} page content.</p>
-        </div>
-      `;
+      container.innerHTML = '';
       container.style.display = "block";
-      
-      if (callback) callback();
+
+      fetch(url)
+        .then(response => response.text())
+        .then(html => {
+          container.innerHTML = html;
+
+          // If it's the map page, initialize the map
+          if (url === "map.html") {
+            // Load the Google Maps API and initialize map
+            loadMapScript();
+          }
+          
+          // For API test page
+          if (url === "api-test.html") {
+            loadApiTestScript();
+          }
+        })
+        .catch(err => console.error("Page load error:", err));
     }
-    
-    // Helper function to capitalize first letter
-    function capitalize(string) {
-      return string.charAt(0).toUpperCase() + string.slice(1);
-    }
-    
-    // Helper function to load scripts
-    function loadScript(src, type = 'text/javascript') {
-      // Remove any existing scripts with this source
-      document.querySelectorAll(`script[src="${src}"]`).forEach(script => script.remove());
+
+    function loadMapScript() {
+      // Remove any existing Google Maps script
+      document.querySelectorAll('script[src*="maps.googleapis.com"]').forEach(script => script.remove());
       
-      // Create and append the new script
-      const script = document.createElement('script');
-      script.src = src;
-      if (type === 'module') {
-        script.type = 'module';
-      }
+      window.api.getApiKey().then((apiKey) => {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places&callback=initMap`;
+        script.async = true;
+        script.defer = true;
+        document.body.appendChild(script);
+      }).catch(err => {
+        console.error("Failed to load API key:", err);
+      });
+    }
+
+    function loadApiTestScript() {
+      // Remove previous API test scripts
+      document.querySelectorAll('script[src="api_test.js"]').forEach(script => script.remove());
+      
+      const script = document.createElement("script");
+      script.type = "module";
+      script.src = "api_test.js";
       document.body.appendChild(script);
     }
+
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        document.getElementById("loading-screen").style.display = "none";
+      }, 2500);
+    });
   </script>
 
-  <!-- Map API initialization -->
   <script type="module">
     import { initMap } from './app.js';
     window.initMap = initMap;
-
-    window.api.getApiKey().then((apiKey) => {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places&callback=initMap`;
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
-    }).catch(err => {
-      console.error("Failed to load API key:", err);
-    });
   </script>
 </body>
 </html>

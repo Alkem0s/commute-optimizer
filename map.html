@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Map</title>
+  <style>
+    #map {
+      width: 100%;
+      height: 600px;
+    }
+    
+    .places-container {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+    }
+    
+    #places-list {
+      margin-top: 15px;
+    }
+    
+    #calculate-route, #toggleSpecialMarker {
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      margin: 10px 5px 10px 0;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    #calculate-route:hover, #toggleSpecialMarker:hover {
+      background-color: #3367d6;
+    }
+    
+    #result {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="map"></div>
+
+    <div class="places-container">
+      <h2>Selected Locations</h2>
+      <button id="toggleSpecialMarker">Toggle Special Marker</button>
+      <button id="calculate-route">Calculate Optimal Route</button>
+      <div id="places-list"></div>
+      <div id="result"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // This will be initialized from app.js when Google Maps API loads
+    // The initMap function is defined in app.js and made global in index.html
+  </script>
+</body>
+</html>
