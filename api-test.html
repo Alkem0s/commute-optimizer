@@ -1,93 +1,526 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>API Test Arayüzü</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    .api-test-container {
-        font-family: Arial, sans-serif;
-        background-color: #f5f5f5;
-        color: #333;
-        padding: 20px;
-        max-width: 600px;
-        margin: 40px auto;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    .api-test-container select {
-        padding: 10px;
-        font-size: 1rem;
-        margin-bottom: 20px;
-        width: 100%;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-    }
-
-    .api-test-container button {
-        padding: 10px 20px;
-        font-size: 1rem;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        background-color: #45b39d;
-        color: white;
-        font-weight: bold;
-        width: 100%;
-        transition: background-color 0.3s ease;
-    }
-
-    .api-test-container button:hover {
-        background-color: #399180;
-    }
-
-    .api-test-container #result {
-        background-color: #f0f0f0;
-        color: #333;
-        padding: 15px;
-        border-radius: 5px;
-        margin-top: 20px;
-        max-height: 300px;
-        overflow-y: auto;
-        display: none;
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Inter font and general body styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top */
+            min-height: 100vh; /* Ensure it takes full viewport height */
+            padding: 20px; /* Add some padding around the content */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2.5rem; /* Increased padding */
+            border-radius: 1rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Stronger shadow */
+            max-width: 900px; /* Increased max-width for better layout */
+            width: 100%;
+            margin-top: 20px; /* Margin from top */
+        }
+        .form-fields {
+            display: none; /* Hidden by default */
+        }
+        input[type="text"], input[type="number"], select {
+            border: 1px solid #d1d5db; /* Light gray border */
+            padding: 0.75rem 1rem; /* Comfortable padding */
+            border-radius: 0.5rem; /* Rounded corners for inputs */
+            width: 100%;
+            box-sizing: border-box; /* Include padding in element's total width */
+            transition: border-color 0.2s ease-in-out; /* Smooth transition on focus */
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue border on focus */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); /* Light blue shadow on focus */
+        }
+        button {
+            background-color: #4f46e5; /* Indigo */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            background-color: #4338ca; /* Darker indigo */
+            transform: translateY(-1px); /* Slight lift effect */
+        }
+        button:active {
+            transform: translateY(0); /* Press effect */
+            box-shadow: none;
+        }
+        #result {
+            background-color: #e0f2fe; /* Light blue background */
+            border: 1px solid #90cdf4; /* Blue border */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1.5rem;
+            white-space: pre-wrap; /* Preserve whitespace and wrap text */
+            word-break: break-all; /* Break long words */
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; /* Monospace font for results */
+            font-size: 0.9rem;
+            color: #2b6cb0; /* Darker blue text */
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+                border-radius: 0.75rem;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="api-test-container">
-    <h2>API Test Arayüzü</h2>
-    <form class="api-test-form">
-      <select id="api-method">
-        <option value="">-- API Metodu Seçin --</option>
-        <optgroup label="Yolcu İşlemleri">
-          <option value="getAllPassengers">Tüm Yolcuları Getir</option>
-          <option value="getPassenger">Yolcu Getir</option>
-          <option value="setPassenger">Yolcu Ekle/Güncelle</option>
-          <option value="deletePassenger">Yolcu Sil</option>
-          <option value="searchPassengers">Yolcu Ara</option>
-        </optgroup>
-        <optgroup label="Rota İşlemleri">
-          <option value="getAllRoutes">Tüm Rotaları Getir</option>
-          <option value="getRoute">Rota Getir</option>
-          <option value="setRoute">Rota Ekle/Güncelle</option>
-          <option value="deleteRoute">Rota Sil</option>
-          <option value="addPassengerToRoute">Rotaya Yolcu Ekle</option>
-          <option value="removePassengerFromRoute">Rotadan Yolcu Çıkar</option>
-        </optgroup>
-        <optgroup label="Araç İşlemleri">
-          <option value="getAllVehicles">Tüm Araçları Getir</option>
-          <option value="getVehicle">Araç Getir</option>
-          <option value="setVehicle">Araç Ekle/Güncelle</option>
-          <option value="deleteVehicle">Araç Sil</option>
-          <option value="assignVehicleToRoute">Rotaya Araç Ata</option>
-        </optgroup>
-      </select>
-      <button type="submit">API'yi Test Et</button>
-    </form>
-    <div id="result" style="display:none;"></div>
-  </div>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">API Test Form</h1>
 
-  
+        <form class="api-test-form space-y-6">
+            <div class="mb-4">
+                <label for="api-method" class="block text-gray-700 text-sm font-semibold mb-2">API Metodu Seçin:</label>
+                <select id="api-method" class="block w-full px-4 py-3 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">-- Metot Seçin --</option>
+                    <optgroup label="Yolcu Metotları">
+                        <option value="getAllPassengers">Tüm Yolcuları Getir</option>
+                        <option value="getPassenger">Yolcu Getir (ID ile)</option>
+                        <option value="setPassenger">Yolcu Ayarla/Ekle</option>
+                        <option value="deletePassenger">Yolcu Sil</option>
+                        <option value="searchPassengers">Yolcu Ara</option>
+                    </optgroup>
+                    <optgroup label="Rota Metotları">
+                        <option value="getAllRoutes">Tüm Rotaları Getir</option>
+                        <option value="getRoute">Rota Getir (ID ile)</option>
+                        <option value="setRoute">Rota Ayarla/Ekle</option>
+                        <option value="deleteRoute">Rota Sil</option>
+                        <option value="addPassengerToRoute">Yolcu Rotaya Ekle</option>
+                        <option value="removePassengerFromRoute">Yolcu Rotadan Çıkar</option>
+                    </optgroup>
+                    <optgroup label="Araç Metotları">
+                        <option value="getAllVehicles">Tüm Araçları Getir</option>
+                        <option value="getVehicle">Araç Getir (ID ile)</option>
+                        <option value="setVehicle">Araç Ayarla/Ekle</option>
+                        <option value="deleteVehicle">Araç Sil</option>
+                        <option value="assignVehicleToRoute">Aracı Rotaya Ata</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div id="getPassenger-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Yolcu Getir</h3>
+                <div>
+                    <label for="getPassenger-id" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID:</label>
+                    <input type="text" id="getPassenger-id" class="w-full" placeholder="Yolcu ID girin">
+                </div>
+            </div>
+
+            <div id="setPassenger-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Yolcu Ayarla/Ekle</h3>
+                <div>
+                    <label for="setPassenger-id" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID:</label>
+                    <input type="text" id="setPassenger-id" class="w-full" placeholder="Yolcu ID girin (boşsa yeni oluşturulur)">
+                </div>
+                <div>
+                    <label for="setPassenger-routeId" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID (ROUTE):</label>
+                    <input type="text" id="setPassenger-routeId" class="w-full" placeholder="Yolcunun atanacağı rota ID'si (örn: ksk1)">
+                </div>
+                <div>
+                    <label for="setPassenger-address" class="block text-gray-700 text-sm font-semibold mb-2">Adres (ADDRESS):</label>
+                    <input type="text" id="setPassenger-address" class="w-full" placeholder="Yolcunun adresi (örn: ksk bozo st.)">
+                </div>
+                <div>
+                    <label for="setPassenger-destinationDescription" class="block text-gray-700 text-sm font-semibold mb-2">Hedef Açıklaması (DESTINATION_DESCRIPTION):</label>
+                    <input type="text" id="setPassenger-destinationDescription" class="w-full" placeholder="Hedefin açıklaması">
+                </div>
+                <div>
+                    <label for="setPassenger-destinationPlace" class="block text-gray-700 text-sm font-semibold mb-2">Hedef Yeri (DESTINATION_PLACE):</label>
+                    <input type="text" id="setPassenger-destinationPlace" class="w-full" placeholder="Hedefin yeri (örn: C.05.4)">
+                </div>
+                <div>
+                    <label for="setPassenger-distanceToAddress" class="block text-gray-700 text-sm font-semibold mb-2">Adrese Uzaklık (DISTANCE_TO_ADDRESS):</label>
+                    <input type="text" id="setPassenger-distanceToAddress" class="w-full" placeholder="Adrese uzaklık (örn: 290)">
+                </div>
+                <div>
+                    <label for="setPassenger-serviceUsage" class="block text-gray-700 text-sm font-semibold mb-2">Servis Kullanımı (SERVICE_USAGE):</label>
+                    <input type="text" id="setPassenger-serviceUsage" class="w-full" placeholder="Servis kullanımı (örn: TRUE/FALSE)">
+                </div>
+                <div>
+                    <label for="setPassenger-stopAddress" class="block text-gray-700 text-sm font-semibold mb-2">Durak Adresi (STOP_ADDRESS):</label>
+                    <input type="text" id="setPassenger-stopAddress" class="w-full" placeholder="Durak adresi (örn: yap st.)">
+                </div>
+            </div>
+
+            <div id="deletePassenger-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Yolcu Sil</h3>
+                <div>
+                    <label for="deletePassenger-id" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID:</label>
+                    <input type="text" id="deletePassenger-id" class="w-full" placeholder="Silinecek yolcu ID'si">
+                </div>
+            </div>
+
+            <div id="searchPassengers-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Yolcu Ara</h3>
+                <div>
+                    <label for="searchPassengers-term" class="block text-gray-700 text-sm font-semibold mb-2">Arama Terimi:</label>
+                    <input type="text" id="searchPassengers-term" class="w-full" placeholder="Arama terimi (ID, rota ID, adres)">
+                </div>
+            </div>
+
+            <div id="getRoute-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Rota Getir</h3>
+                <div>
+                    <label for="getRoute-id" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID:</label>
+                    <input type="text" id="getRoute-id" class="w-full" placeholder="Rota ID girin">
+                </div>
+            </div>
+
+            <div id="setRoute-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Rota Ayarla/Ekle</h3>
+                <div>
+                    <label for="setRoute-id" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID:</label>
+                    <input type="text" id="setRoute-id" class="w-full" placeholder="Rota ID girin (boşsa yeni oluşturulur)">
+                </div>
+                <div>
+                    <label for="setRoute-vehicleId" class="block text-gray-700 text-sm font-semibold mb-2">Araç ID:</label>
+                    <input type="text" id="setRoute-vehicleId" class="w-full" placeholder="Rotaya atanacak araç ID'si">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="setRoute-lat" class="block text-gray-700 text-sm font-semibold mb-2">Durak Enlem:</label>
+                        <input type="number" step="any" id="setRoute-lat" class="w-full" placeholder="Durak enlemi (örn: 40.7128)">
+                    </div>
+                    <div>
+                        <label for="setRoute-long" class="block text-gray-700 text-sm font-semibold mb-2">Durak Boylam:</label>
+                        <input type="number" step="any" id="setRoute-long" class="w-full" placeholder="Durak boylamı (örn: -74.0060)">
+                    </div>
+                </div>
+                <div>
+                    <label for="setRoute-passengerIds" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID'leri (virgülle ayırın):</label>
+                    <input type="text" id="setRoute-passengerIds" class="w-full" placeholder="Örn: p1, p2, p3">
+                </div>
+            </div>
+
+            <div id="deleteRoute-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Rota Sil</h3>
+                <div>
+                    <label for="deleteRoute-id" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID:</label>
+                    <input type="text" id="deleteRoute-id" class="w-full" placeholder="Silinecek rota ID'si">
+                </div>
+            </div>
+
+            <div id="addPassengerToRoute-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Yolcu Rotaya Ekle</h3>
+                <div>
+                    <label for="addPassengerToRoute-routeId" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID:</label>
+                    <input type="text" id="addPassengerToRoute-routeId" class="w-full" placeholder="Yolcunun ekleneceği rota ID'si">
+                </div>
+                <div>
+                    <label for="addPassengerToRoute-passengerId" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID:</label>
+                    <input type="text" id="addPassengerToRoute-passengerId" class="w-full" placeholder="Eklenecek yolcu ID'si">
+                </div>
+            </div>
+
+            <div id="removePassengerFromRoute-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Yolcu Rotadan Çıkar</h3>
+                <div>
+                    <label for="removePassengerFromRoute-routeId" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID:</label>
+                    <input type="text" id="removePassengerFromRoute-routeId" class="w-full" placeholder="Yolcunun çıkarılacağı rota ID'si">
+                </div>
+                <div>
+                    <label for="removePassengerFromRoute-passengerId" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID:</label>
+                    <input type="text" id="removePassengerFromRoute-passengerId" class="w-full" placeholder="Çıkarılacak yolcu ID'si">
+                </div>
+            </div>
+
+            <div id="getVehicle-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Araç Getir</h3>
+                <div>
+                    <label for="getVehicle-id" class="block text-gray-700 text-sm font-semibold mb-2">Araç ID:</label>
+                    <input type="text" id="getVehicle-id" class="w-full" placeholder="Araç ID girin">
+                </div>
+            </div>
+
+            <div id="setVehicle-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Araç Ayarla/Ekle</h3>
+                <div>
+                    <label for="setVehicle-id" class="block text-gray-700 text-sm font-semibold mb-2">Araç ID:</label>
+                    <input type="text" id="setVehicle-id" class="w-full" placeholder="Araç ID girin (boşsa yeni oluşturulur)">
+                </div>
+                <div>
+                    <label for="setVehicle-plate" class="block text-gray-700 text-sm font-semibold mb-2">Plaka:</label>
+                    <input type="text" id="setVehicle-plate" class="w-full" placeholder="Araç plakası">
+                </div>
+                <div>
+                    <label for="setVehicle-capacity" class="block text-gray-700 text-sm font-semibold mb-2">Kapasite:</label>
+                    <input type="number" id="setVehicle-capacity" class="w-full" placeholder="Araç kapasitesi">
+                </div>
+                <div>
+                    <label for="setVehicle-vehicleManager" class="block text-gray-700 text-sm font-semibold mb-2">Araç Yöneticisi (VEHICLE_MANAGER):</label>
+                    <input type="text" id="setVehicle-vehicleManager" class="w-full" placeholder="Araç yöneticisi (örn: Johannus Doerius the III.)">
+                </div>
+            </div>
+
+            <div id="deleteVehicle-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Araç Sil</h3>
+                <div>
+                    <label for="deleteVehicle-id" class="block text-gray-700 text-sm font-semibold mb-2">Araç ID:</label>
+                    <input type="text" id="deleteVehicle-id" class="w-full" placeholder="Silinecek araç ID'si">
+                </div>
+            </div>
+
+            <div id="assignVehicleToRoute-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Aracı Rotaya Ata</h3>
+                <div>
+                    <label for="assignVehicleToRoute-routeId" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID:</label>
+                    <input type="text" id="assignVehicleToRoute-routeId" class="w-full" placeholder="Aracın atanacağı rota ID'si">
+                </div>
+                <div>
+                    <label for="assignVehicleToRoute-vehicleId" class="block text-gray-700 text-sm font-semibold mb-2">Araç ID:</label>
+                    <input type="text" id="assignVehicleToRoute-vehicleId" class="w-full" placeholder="Atanacak araç ID'si">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full">API Metodunu Çalıştır</button>
+        </form>
+
+        <div id="result" class="hidden">
+            </div>
+    </div>
+
+    <script id="firebase-js-placeholder">
+        // This is a placeholder for firebase.js
+        // In a real application, you would initialize Firebase here.
+        export async function initializeFirebase() {
+            console.log("Firebase initialized (placeholder)");
+            // Simulate async initialization
+            return new Promise(resolve => setTimeout(resolve, 100));
+        }
+    </script>
+
+    <script id="api-js-placeholder">
+        // This is a placeholder for api.js
+        // In a real application, these would be actual API calls.
+        export const api = {
+            getAllPassengers: async () => { console.log('getAllPassengers called'); return [{ id: 'p1', routeId: 'r1', address: 'Address 1' }]; },
+            getPassenger: async (id) => { console.log('getPassenger called with', id); return { id: id, routeId: 'r1', address: 'Address X' }; },
+            setPassenger: async (id, data) => { console.log('setPassenger called with', id, data); return { id: id, routeId: data.ROUTE, address: data.ADDRESS, DESTINATION_DESCRIPTION: data.DESTINATION_DESCRIPTION, DESTINATION_PLACE: data.DESTINATION_PLACE, DISTANCE_TO_ADDRESS: data.DISTANCE_TO_ADDRESS, SERVICE_USAGE: data.SERVICE_USAGE, STOP_ADDRESS: data.STOP_ADDRESS }; },
+            deletePassenger: async (id) => { console.log('deletePassenger called with', id); return true; },
+            searchPassengers: async (term) => { console.log('searchPassengers called with', term); return [{ id: 'p1', address: 'Found ' + term }]; },
+
+            getAllRoutes: async () => { console.log('getAllRoutes called'); return [{ id: 'r1', vehicleId: 'v1' }]; },
+            getRoute: async (id) => { console.log('getRoute called with', id); return { id: id, vehicleId: 'v1', stops: [{ LAT: 1, LONG: 2 }] }; },
+            setRoute: async (id, data) => { console.log('setRoute called with', id, data); return { id: id, ...data }; },
+            deleteRoute: async (id) => { console.log('deleteRoute called with', id); return true; },
+            addPassengerToRoute: async (routeId, passengerId) => { console.log('addPassengerToRoute called with', routeId, passengerId); return true; },
+            removePassengerFromRoute: async (routeId, passengerId) => { console.log('removePassengerFromRoute called with', routeId, passengerId); return true; },
+
+            getAllVehicles: async () => { console.log('getAllVehicles called'); return [{ id: 'v1', plate: 'TR-123' }]; },
+            getVehicle: async (id) => { console.log('getVehicle called with', id); return { id: id, plate: 'TR-XYZ' }; },
+            setVehicle: async (id, data) => { console.log('setVehicle called with', id, data); return { id: id, ...data }; },
+            deleteVehicle: async (id) => { console.log('deleteVehicle called with', id); return true; },
+            assignVehicleToRoute: async (routeId, vehicleId) => { console.log('assignVehicleToRoute called with', routeId, vehicleId); return true; },
+        };
+    </script>
+
+    <script type="module">
+        // The original script.js content provided by the user
+        import { initializeFirebase } from './firebase.js';
+        import * as api from './api.js';
+
+        let isFirebaseInitialized = false;
+        let isSetupDone = false;
+
+        function setupApiTestPage() {
+          if (isSetupDone) return;
+          isSetupDone = true;
+
+          if (!isFirebaseInitialized) {
+            initializeFirebase().catch(error => {
+              console.error("Firebase init failed:", error);
+              // Using a custom message box instead of alert()
+              const resultDiv = document.getElementById('result');
+              if (resultDiv) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<strong class="text-red-600">Hata:</strong> Firebase başlatılamadı: ${error.message}`;
+              }
+            });
+            isFirebaseInitialized = true;
+          }
+
+          const methodSelect = document.getElementById('api-method');
+          const resultDiv = document.getElementById('result');
+          const apiForm = document.querySelector('.api-test-form');
+
+          if (!methodSelect || !resultDiv || !apiForm) {
+            console.warn("Gerekli DOM elemanları henüz yüklenmedi. Tekrar deneniyor...");
+            isSetupDone = false;
+            setTimeout(setupApiTestPage, 100); // DOM hazır değilse tekrar dene
+            return;
+          }
+
+          methodSelect.addEventListener('change', () => {
+            document.querySelectorAll('.form-fields').forEach(f => f.style.display = 'none');
+            const selected = methodSelect.value;
+            const targetFields = document.getElementById(`${selected}-fields`);
+            if (targetFields) targetFields.style.display = 'block';
+          });
+
+          apiForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const selectedMethod = methodSelect.value;
+            if (!selectedMethod) {
+              // Using a custom message box instead of alert()
+              resultDiv.style.display = 'block';
+              resultDiv.innerHTML = `<strong class="text-orange-600">Uyarı:</strong> Lütfen bir API metodu seçin.`;
+              return;
+            }
+
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<span class="text-blue-600">İşlem yapılıyor...</span>';
+
+            try {
+              const result = await handleApiMethod(selectedMethod);
+              resultDiv.innerHTML = `<strong class="text-green-600">Sonuç:</strong><br><pre>${formatResult(result)}</pre>`;
+            } catch (error) {
+              console.error("API error:", error);
+              resultDiv.innerHTML = `<strong class="text-red-600">Hata:</strong><br>${error.message}`;
+            }
+          });
+        }
+
+        // Ensure setupApiTestPage runs after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', setupApiTestPage);
+
+
+        // 👇 Bu fonksiyon, her bir API metodunu yönetir
+        async function handleApiMethod(method) {
+          switch (method) {
+            case 'getAllPassengers':
+              return await api.getAllPassengers();
+            case 'getPassenger':
+              const id1 = document.getElementById('getPassenger-id').value;
+              if (!id1) throw new Error('Yolcu ID gerekli');
+              return await api.getPassenger(id1);
+            case 'setPassenger':
+              const id2 = document.getElementById('setPassenger-id').value.toString();
+              const routeId = document.getElementById('setPassenger-routeId').value.toString();
+              const address = document.getElementById('setPassenger-address').value;
+              const destinationDescription = document.getElementById('setPassenger-destinationDescription').value;
+              const destinationPlace = document.getElementById('setPassenger-destinationPlace').value;
+              const distanceToAddress = document.getElementById('setPassenger-distanceToAddress').value;
+              const serviceUsage = document.getElementById('setPassenger-serviceUsage').value;
+              const stopAddress = document.getElementById('setPassenger-stopAddress').value;
+
+              if (!id2) throw new Error('Yolcu ID boş olamaz');
+              return await api.setPassenger(id2, {
+                ADDRESS: address,
+                DESTINATION_DESCRIPTION: destinationDescription,
+                DESTINATION_PLACE: destinationPlace,
+                DISTANCE_TO_ADDRESS: distanceToAddress,
+                ROUTE: routeId,
+                SERVICE_USAGE: serviceUsage,
+                STOP_ADDRESS: stopAddress
+              });
+            case 'deletePassenger':
+              const id3 = document.getElementById('deletePassenger-id').value;
+              if (!id3) throw new Error('Silinecek yolcu ID boş olamaz');
+              return await api.deletePassenger(id3);
+            case 'searchPassengers':
+              const term = document.getElementById('searchPassengers-term').value;
+              if (!term) throw new Error('Arama terimi boş olamaz');
+              return await api.searchPassengers(term);
+
+            case 'getAllRoutes':
+              return await api.getAllRoutes();
+            case 'getRoute':
+              const id4 = document.getElementById('getRoute-id').value;
+              if (!id4) throw new Error('Rota ID gerekli');
+              return await api.getRoute(id4);
+            case 'setRoute':
+              const id5 = document.getElementById('setRoute-id').value;
+              const vehicleId = document.getElementById('setRoute-vehicleId').value;
+              const lat = document.getElementById('setRoute-lat').value;
+              const long = document.getElementById('setRoute-long').value;
+              const passengerIdsInput = document.getElementById('setRoute-passengerIds').value;
+
+              if (!id5) throw new Error('Rota ID gerekli');
+              const stops = (lat && long) ? [{ LAT: parseFloat(lat), LONG: parseFloat(long) }] : [];
+              const passengerIds = passengerIdsInput
+                ? passengerIdsInput.split(',').map(id => id.trim())
+                : [];
+
+              return await api.setRoute(id5, {
+                STOPS: stops,
+                VEHICLE_ID: vehicleId.toUpperCase(),
+                PASSENGER_IDS: passengerIds
+              });
+
+            case 'deleteRoute':
+              const id6 = document.getElementById('deleteRoute-id').value;
+              if (!id6) throw new Error('Rota ID gerekli');
+              return await api.deleteRoute(id6);
+            case 'addPassengerToRoute':
+              const rid1 = document.getElementById('addPassengerToRoute-routeId').value;
+              const pid1 = document.getElementById('addPassengerToRoute-passengerId').value;
+              if (!rid1 || !pid1) throw new Error('Her iki ID de gerekli');
+              return await api.addPassengerToRoute(rid1, pid1);
+            case 'removePassengerFromRoute':
+              const rid2 = document.getElementById('removePassengerFromRoute-routeId').value;
+              const pid2 = document.getElementById('removePassengerFromRoute-passengerId').value;
+              if (!rid2 || !pid2) throw new Error('Her iki ID de gerekli');
+              return await api.removePassengerFromRoute(rid2, pid2);
+
+            case 'getAllVehicles':
+              return await api.getAllVehicles();
+            case 'getVehicle':
+              const id7 = document.getElementById('getVehicle-id').value;
+              if (!id7) throw new Error('Araç ID gerekli');
+              return await api.getVehicle(id7);
+            case 'setVehicle':
+              const id8 = document.getElementById('setVehicle-id').value;
+              const plate = document.getElementById('setVehicle-plate').value;
+              const capacity = document.getElementById('setVehicle-capacity').value;
+              if (!id8) throw new Error('Araç ID gerekli');
+              return await api.setVehicle(id8, {
+                PLATE: plate,
+                CAPACITY: parseInt(capacity, 10), // Ensure capacity is a number
+                ASSIGNED_SEAT_COUNT: "0" // Assuming this is a string as per original code
+              });
+            case 'deleteVehicle':
+              const id9 = document.getElementById('deleteVehicle-id').value;
+              if (!id9) throw new Error('Araç ID gerekli');
+              return await api.deleteVehicle(id9);
+            case 'assignVehicleToRoute':
+              const rid3 = document.getElementById('assignVehicleToRoute-routeId').value;
+              const vid = document.getElementById('assignVehicleToRoute-vehicleId').value;
+              if (!rid3 || !vid) throw new Error('Rota ve araç ID gerekli');
+              return await api.assignVehicleToRoute(rid3, vid);
+
+            default:
+              throw new Error("Bilinmeyen API metodu: " + method);
+          }
+        }
+
+        function formatResult(result) {
+          if (result === undefined) return "İşlem başarılı (dönen veri yok)";
+          if (typeof result === 'boolean') return result ? "İşlem başarılı" : "İşlem başarısız";
+          if (result === null) return "Sonuç bulunamadı";
+          if (typeof result === 'object') return JSON.stringify(result, null, 2);
+          return result.toString();
+        }
+    </script>
 </body>
 </html>

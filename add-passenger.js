@@ -1,70 +1,29 @@
-// Add these modal functions
-function showModal() {
-    const modal = document.getElementById('successModal');
-    modal.style.display = 'block';
-}
+// add-passenger.js
+import { setPassenger } from './api.js';
 
-function closeModal() {
-    const modal = document.getElementById('successModal');
-    modal.style.display = 'none';
-}
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('successModal');
-    if (event.target === modal) {
-        closeModal();
-    }
-}
-
-// Modified form submit handler
 document.getElementById('passengerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-// Get form values
-const passengerData = {
-    dahili_gosterim_adi: document.getElementById('dahili_gosterim_adi').value,
-    gider_yeri: document.getElementById('gider_yeri').value,
-    gider_yeri_tanim: document.getElementById('gider_yeri_tanim').value,
-    servis_kullanimi: document.getElementById('servis_kullanimi').value,
-    servis_no: document.getElementById('servis_no').value,
-    servise_binis_saati: document.getElementById('servise_binis_saati').value,
-    servise_inis_saati: document.getElementById('servise_inis_saati').value,
-    servis_sira: document.getElementById('servis_sira').value,
-    servis_adresi: document.getElementById('servis_adresi').value,
-    ikametgah_adresine_uzaklik: document.getElementById('ikametgah_adresine_uzaklik').value
-};
 
-try {
-    // Use the exposed firebaseAPI from preload.js
-    const result = await window.firebaseAPI.addData('YOLCULAR', {
-        "Dahili Gösterim Adı": passengerData.dahili_gosterim_adi,
-        "GİDER YERİ": passengerData.gider_yeri,
-        "GİDER YERİ TANIM": passengerData.gider_yeri_tanim,
-        "Servis Kullanımı": passengerData.servis_kullanimi,
-        "Servis No": passengerData.servis_no,
-        "Servise Biniş Saati": passengerData.servise_binis_saati,
-        "Servise İniş Saati": passengerData.servise_inis_saati,
-        "SERVİS SIRA": passengerData.servis_sira,
-        "Servis Adresi": passengerData.servis_adresi,
-        "ikametgah adresine uzaklık": passengerData.ikametgah_adresine_uzaklik
-    });
+    // Extract form values
+    const passengerId = document.getElementById('dahili_gosterim_adi').value.trim();
+    const routeId = document.getElementById('gider_yeri').value.trim(); // Destination Code = ROUTE in sample
+    const address = document.getElementById('servis_adresi').value.trim(); // Service Address = STOP_ADDRESS in sample
 
-
-        if (result.success) {
-            showModal(); // Changed from showMessage to modal
-            document.getElementById('passengerForm').reset();
-        } else {
-            showMessage(`Error: ${result.error}`, 'error');
-        }
+    try {
+        // Save passenger using API (structure: [routeId, address])
+        await setPassenger(passengerId.toLowerCase(), [routeId, address]);
+        
+        // Show success modal
+        document.getElementById('successModal').style.display = 'block';
+        
+        // Reset form
+        document.getElementById('passengerForm').reset();
     } catch (error) {
-        showMessage(`Error: ${error.message}`, 'error');
+        document.getElementById('message').textContent = "Error adding passenger: " + error.message;
     }
 });
 
-// Keep existing error message function
-function showMessage(text, type) {
-    const messageDiv = document.getElementById('message');
-    messageDiv.textContent = text;
-    messageDiv.style.color = type === 'success' ? 'green' : 'red';
-    setTimeout(() => messageDiv.textContent = '', 3000);
-}
+// Close modal function
+window.closeModal = () => {
+    document.getElementById('successModal').style.display = 'none';
+};

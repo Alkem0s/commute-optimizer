@@ -1,227 +1,216 @@
-// api_test.js
 import { initializeFirebase } from './firebase.js';
 import * as api from './api.js';
 
 let isFirebaseInitialized = false;
+let isSetupDone = false;
 
-document.addEventListener('DOMContentLoaded', function() {
-    if (isFirebaseInitialized) return; // Prevent duplicate setup
-    isFirebaseInitialized = true;
+function setupApiTestPage() {
+  if (isSetupDone) return;
+  isSetupDone = true;
 
-    // Initialize Firebase when the page loads
+  if (!isFirebaseInitialized) {
     initializeFirebase().catch(error => {
-        console.error("Failed to initialize Firebase:", error);
-        alert("Firebase initialization failed. Check the console for details.");
+      console.error("Firebase init failed:", error);
+      alert("Firebase başlatılamadı.");
     });
+    isFirebaseInitialized = true;
+  }
 
-    const methodSelect = document.getElementById('api-method');
-    const resultDiv = document.getElementById('result');
-    const apiForm = document.querySelector('.api-test-form');
+  const methodSelect = document.getElementById('api-method');
+  const resultDiv = document.getElementById('result');
+  const apiForm = document.querySelector('.api-test-form');
 
-    // Show/hide appropriate form fields based on selected method
-    methodSelect.addEventListener('change', function() {
-        // Hide all form fields first
-        const allFields = document.querySelectorAll('.form-fields');
-        allFields.forEach(field => field.style.display = 'none');
+  if (!methodSelect || !resultDiv || !apiForm) {
+    console.warn("Gerekli DOM elemanları henüz yüklenmedi. Tekrar deneniyor...");
+    isSetupDone = false;
+    setTimeout(setupApiTestPage, 100); // DOM hazır değilse tekrar dene
+    return;
+  }
 
-        // Show the fields for the selected method
-        const selectedMethod = methodSelect.value;
-        if (selectedMethod) {
-            const fieldsToShow = document.getElementById(`${selectedMethod}-fields`);
-            if (fieldsToShow) {
-                fieldsToShow.style.display = 'block';
-            }
+  methodSelect.addEventListener('change', () => {
+    document.querySelectorAll('.form-fields').forEach(f => f.style.display = 'none');
+    const selected = methodSelect.value;
+    const targetFields = document.getElementById(`${selected}-fields`);
+    if (targetFields) targetFields.style.display = 'block';
+  });
+
+  apiForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const selectedMethod = methodSelect.value;
+    if (!selectedMethod) {
+      alert('Lütfen bir API metodu seçin.');
+      return;
+    }
+
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = 'İşlem yapılıyor...';
+
+    try {
+      const result = await handleApiMethod(selectedMethod);
+      resultDiv.innerHTML = `<strong>Sonuç:</strong><br><pre>${formatResult(result)}</pre>`;
+    } catch (error) {
+      console.error("API error:", error);
+      resultDiv.innerHTML = `<strong>Hata:</strong><br>${error.message}`;
+    }
+  });
+}
+
+setupApiTestPage(); // ilk tetikleme
+
+// 👇 Bu fonksiyon, her bir API metodunu yönetir
+async function handleApiMethod(method) {
+          switch (method) {
+            case 'getAllPassengers':
+              return await api.getAllPassengers();
+            case 'getPassenger':
+              const id1Input = document.getElementById('getPassenger-id');
+              const id1 = id1Input ? id1Input.value : '';
+              if (!id1) throw new Error('Yolcu ID gerekli');
+              return await api.getPassenger(id1);
+            case 'setPassenger':
+              const id2Input = document.getElementById('setPassenger-id');
+              const routeIdInput = document.getElementById('setPassenger-routeId');
+              const addressInput = document.getElementById('setPassenger-address');
+              const destinationDescriptionInput = document.getElementById('setPassenger-destinationDescription');
+              const destinationPlaceInput = document.getElementById('setPassenger-destinationPlace');
+              const distanceToAddressInput = document.getElementById('setPassenger-distanceToAddress');
+              const serviceUsageInput = document.getElementById('setPassenger-serviceUsage');
+              const stopAddressInput = document.getElementById('setPassenger-stopAddress');
+
+              const id2 = id2Input ? id2Input.value : '';
+              const routeId = routeIdInput ? routeIdInput.value : '';
+              const address = addressInput ? addressInput.value : '';
+              const destinationDescription = destinationDescriptionInput ? destinationDescriptionInput.value : '';
+              const destinationPlace = destinationPlaceInput ? destinationPlaceInput.value : '';
+              const distanceToAddress = distanceToAddressInput ? distanceToAddressInput.value : '';
+              const serviceUsage = serviceUsageInput ? serviceUsageInput.value : '';
+              const stopAddress = stopAddressInput ? stopAddressInput.value : '';
+
+              if (!id2) throw new Error('Yolcu ID boş olamaz');
+              return await api.setPassenger(id2, {
+                ADDRESS: address,
+                DESTINATION_DESCRIPTION: destinationDescription,
+                DESTINATION_PLACE: destinationPlace,
+                DISTANCE_TO_ADDRESS: distanceToAddress,
+                ROUTE: routeId,
+                SERVICE_USAGE: serviceUsage,
+                STOP_ADDRESS: stopAddress
+              });
+            case 'deletePassenger':
+              const id3Input = document.getElementById('deletePassenger-id');
+              const id3 = id3Input ? id3Input.value : '';
+              if (!id3) throw new Error('Silinecek yolcu ID boş olamaz');
+              return await api.deletePassenger(id3);
+            case 'searchPassengers':
+              const termInput = document.getElementById('searchPassengers-term');
+              const term = termInput ? termInput.value : '';
+              if (!term) throw new Error('Arama terimi boş olamaz');
+              return await api.searchPassengers(term);
+
+            case 'getAllRoutes':
+              return await api.getAllRoutes();
+            case 'getRoute':
+              const id4Input = document.getElementById('getRoute-id');
+              const id4 = id4Input ? id4Input.value : '';
+              if (!id4) throw new Error('Rota ID gerekli');
+              return await api.getRoute(id4);
+            case 'setRoute':
+              const id5Input = document.getElementById('setRoute-id');
+              const vehicleIdInput = document.getElementById('setRoute-vehicleId');
+              const latInput = document.getElementById('setRoute-lat');
+              const longInput = document.getElementById('setRoute-long');
+              const passengerIdsInput = document.getElementById('setRoute-passengerIds');
+
+              const id5 = id5Input ? id5Input.value : '';
+              const vehicleId = vehicleIdInput ? vehicleIdInput.value : '';
+              const lat = latInput ? latInput.value : '';
+              const long = longInput ? longInput.value : '';
+              const passengerIdsRaw = passengerIdsInput ? passengerIdsInput.value : '';
+
+              if (!id5) throw new Error('Rota ID gerekli');
+
+              // Construct STOPS array with LAT and LONG as strings
+              const stops = (lat && long) ? [{ LAT: lat, LONG: long }] : [];
+
+              // Parse passenger IDs into an array of strings
+              const passengerIds = passengerIdsRaw
+                ? passengerIdsRaw.split(',').map(id => id.trim())
+                : [];
+
+              return await api.setRoute(id5, {
+                STOPS: stops,
+                VEHICLE_ID: vehicleId.toUpperCase(),
+                PASSENGER_IDS: passengerIds
+              });
+
+            case 'deleteRoute':
+              const id6Input = document.getElementById('deleteRoute-id');
+              const id6 = id6Input ? id6Input.value : '';
+              if (!id6) throw new Error('Rota ID gerekli');
+              return await api.deleteRoute(id6);
+            case 'addPassengerToRoute':
+              const rid1Input = document.getElementById('addPassengerToRoute-routeId');
+              const pid1Input = document.getElementById('addPassengerToRoute-passengerId');
+              const rid1 = rid1Input ? rid1Input.value : '';
+              const pid1 = pid1Input ? pid1Input.value : '';
+              if (!rid1 || !pid1) throw new Error('Her iki ID de gerekli');
+              return await api.addPassengerToRoute(rid1, pid1);
+            case 'removePassengerFromRoute':
+              const rid2Input = document.getElementById('removePassengerFromRoute-routeId');
+              const pid2Input = document.getElementById('removePassengerFromRoute-passengerId');
+              const rid2 = rid2Input ? rid2Input.value : '';
+              const pid2 = pid2Input ? pid2Input.value : '';
+              if (!rid2 || !pid2) throw new Error('Her iki ID de gerekli');
+              return await api.removePassengerFromRoute(rid2, pid2);
+
+            case 'getAllVehicles':
+              return await api.getAllVehicles();
+            case 'getVehicle':
+              const id7Input = document.getElementById('getVehicle-id');
+              const id7 = id7Input ? id7Input.value : '';
+              if (!id7) throw new Error('Araç ID gerekli');
+              return await api.getVehicle(id7);
+            case 'setVehicle':
+              const id8Input = document.getElementById('setVehicle-id');
+              const plateInput = document.getElementById('setVehicle-plate');
+              const capacityInput = document.getElementById('setVehicle-capacity');
+              const vehicleManagerInput = document.getElementById('setVehicle-vehicleManager');
+
+              const id8 = id8Input ? id8Input.value : '';
+              const plate = plateInput ? plateInput.value : '';
+              const capacity = capacityInput ? capacityInput.value : ''; // Keep as string
+              const vehicleManager = vehicleManagerInput ? vehicleManagerInput.value : ''; // New field
+
+              if (!id8) throw new Error('Araç ID gerekli');
+              return await api.setVehicle(id8, {
+                PLATE: plate,
+                CAPACITY: capacity, // Now passed as a string
+                ASSIGNED_SEAT_COUNT: "0", // Assuming this remains a string
+                VEHICLE_MANAGER: vehicleManager // New field
+              });
+            case 'deleteVehicle':
+              const id9Input = document.getElementById('deleteVehicle-id');
+              const id9 = id9Input ? id9Input.value : '';
+              if (!id9) throw new Error('Araç ID gerekli');
+              return await api.deleteVehicle(id9);
+            case 'assignVehicleToRoute':
+              const rid3Input = document.getElementById('assignVehicleToRoute-routeId');
+              const vidInput = document.getElementById('assignVehicleToRoute-vehicleId');
+              const rid3 = rid3Input ? rid3Input.value : '';
+              const vid = vidInput ? vidInput.value : '';
+              if (!rid3 || !vid) throw new Error('Rota ve araç ID gerekli');
+              return await api.assignVehicleToRoute(rid3, vid);
+
+            default:
+              throw new Error("Bilinmeyen API metodu: " + method);
+          }
         }
-    });
 
-    // Handle form submission
-    apiForm.addEventListener('submit', async function(event) {
-        event.preventDefault(); // Prevent form submission
-        
-        const selectedMethod = methodSelect.value;
-        if (!selectedMethod) {
-            alert('Lütfen bir API metodu seçin.');
-            return;
-        }
-
-        resultDiv.style.display = 'block';
-        resultDiv.innerHTML = 'İşlem yapılıyor...';
-
-        try {
-            let result;
-            switch (selectedMethod) {
-                // Passenger operations
-                case 'getAllPassengers':
-                    result = await api.getAllPassengers();
-                    break;
-                case 'getPassenger':
-                    const passengerId = document.getElementById('getPassenger-id').value;
-                    if (!passengerId) {
-                        throw new Error('Yolcu ID boş olamaz');
-                    }
-                    result = await api.getPassenger(passengerId);
-                    break;
-                case 'setPassenger':
-                    const newPassengerId = document.getElementById('setPassenger-id').value;
-                    const routeId = document.getElementById('setPassenger-routeId').value;
-                    const address = document.getElementById('setPassenger-address').value;
-                    if (!newPassengerId) {
-                        throw new Error('Yolcu ID boş olamaz');
-                    }
-                    result = await api.setPassenger(newPassengerId, [routeId, address]);
-                    break;
-                case 'deletePassenger':
-                    const delPassengerId = document.getElementById('deletePassenger-id').value;
-                    if (!delPassengerId) {
-                        throw new Error('Silinecek yolcu ID boş olamaz');
-                    }
-                    result = await api.deletePassenger(delPassengerId);
-                    break;
-                case 'searchPassengers':
-                    const searchTerm = document.getElementById('searchPassengers-term').value;
-                    if (!searchTerm) {
-                        throw new Error('Arama terimi boş olamaz');
-                    }
-                    result = await api.searchPassengers(searchTerm);
-                    break;
-
-                // Route operations
-                case 'getAllRoutes':
-                    result = await api.getAllRoutes();
-                    break;
-                case 'getRoute':
-                    const getRouteId = document.getElementById('getRoute-id').value;
-                    if (!getRouteId) {
-                        throw new Error('Rota ID boş olamaz');
-                    }
-                    result = await api.getRoute(getRouteId);
-                    break;
-                case 'setRoute':
-                    const newRouteId = document.getElementById('setRoute-id').value;
-                    const vehicleId = document.getElementById('setRoute-vehicleId').value;
-                    const lat = document.getElementById('setRoute-lat').value;
-                    const long = document.getElementById('setRoute-long').value;
-                    const passengerIdsInput = document.getElementById('setRoute-passengerIds').value;
-                    
-                    if (!newRouteId) {
-                        throw new Error('Rota ID boş olamaz');
-                    }
-                    
-                    const stops = [];
-                    if (lat && long) {
-                        stops.push({ LAT: lat, LONG: long });
-                    }
-                    
-                    const passengerIds = [];
-                    if (passengerIdsInput) {
-                        passengerIdsInput.split(',').forEach(id => {
-                            passengerIds.push(id.trim());
-                        });
-                    }
-                    
-                    const routeData = {
-                        STOPS: stops,
-                        VEHICLE_ID: vehicleId.toUpperCase(),
-                        PASSENGER_IDS: passengerIds
-                    };
-                    result = await api.setRoute(newRouteId, routeData);
-                    break;
-                case 'deleteRoute':
-                    const delRouteId = document.getElementById('deleteRoute-id').value;
-                    if (!delRouteId) {
-                        throw new Error('Silinecek rota ID boş olamaz');
-                    }
-                    result = await api.deleteRoute(delRouteId);
-                    break;
-                case 'addPassengerToRoute':
-                    const routeForPassenger = document.getElementById('addPassengerToRoute-routeId').value;
-                    const passengerForRoute = document.getElementById('addPassengerToRoute-passengerId').value;
-                    if (!routeForPassenger || !passengerForRoute) {
-                        throw new Error('Rota ID ve Yolcu ID boş olamaz');
-                    }
-                    result = await api.addPassengerToRoute(routeForPassenger, passengerForRoute);
-                    break;
-                case 'removePassengerFromRoute':
-                    const routeForRemoval = document.getElementById('removePassengerFromRoute-routeId').value;
-                    const passengerForRemoval = document.getElementById('removePassengerFromRoute-passengerId').value;
-                    if (!routeForRemoval || !passengerForRemoval) {
-                        throw new Error('Rota ID ve Yolcu ID boş olamaz');
-                    }
-                    result = await api.removePassengerFromRoute(routeForRemoval, passengerForRemoval);
-                    break;
-
-                // Vehicle operations
-                case 'getAllVehicles':
-                    result = await api.getAllVehicles();
-                    break;
-                case 'getVehicle':
-                    const getVehicleId = document.getElementById('getVehicle-id').value;
-                    if (!getVehicleId) {
-                        throw new Error('Araç ID boş olamaz');
-                    }
-                    result = await api.getVehicle(getVehicleId);
-                    break;
-                case 'setVehicle':
-                    const newVehicleId = document.getElementById('setVehicle-id').value;
-                    const plate = document.getElementById('setVehicle-plate').value;
-                    const capacity = document.getElementById('setVehicle-capacity').value;
-                    
-                    if (!newVehicleId) {
-                        throw new Error('Araç ID boş olamaz');
-                    }
-                    
-                    const vehicleData = {
-                        PLATE: plate,
-                        CAPACITY: capacity,
-                        ASSIGNED_SEAT_COUNT: "0"
-                    };
-                    result = await api.setVehicle(newVehicleId, vehicleData);
-                    break;
-                case 'deleteVehicle':
-                    const delVehicleId = document.getElementById('deleteVehicle-id').value;
-                    if (!delVehicleId) {
-                        throw new Error('Silinecek araç ID boş olamaz');
-                    }
-                    result = await api.deleteVehicle(delVehicleId);
-                    break;
-                case 'assignVehicleToRoute':
-                    const routeForVehicle = document.getElementById('assignVehicleToRoute-routeId').value;
-                    const vehicleForRoute = document.getElementById('assignVehicleToRoute-vehicleId').value;
-                    if (!routeForVehicle || !vehicleForRoute) {
-                        throw new Error('Rota ID ve Araç ID boş olamaz');
-                    }
-                    result = await api.assignVehicleToRoute(routeForVehicle, vehicleForRoute);
-                    break;
-                default:
-                    throw new Error('Geçersiz API metodu');
-            }
-
-            // Format and display the result
-            resultDiv.innerHTML = `<strong>Sonuç:</strong><br><pre>${formatResult(result)}</pre>`;
-        } catch (error) {
-            console.error("API error:", error);
-            resultDiv.innerHTML = `<strong>Hata:</strong><br>${error.message}`;
-        }
-    });
-});
-
-// Helper function to format the result
 function formatResult(result) {
-    if (result === undefined) {
-        return "İşlem başarılı (sonuç dönmüyor)";
-    }
-    
-    if (typeof result === 'boolean') {
-        return result ? "İşlem başarılı" : "İşlem başarısız";
-    }
-    
-    if (result === null) {
-        return "Sonuç bulunamadı";
-    }
-    
-    if (typeof result === 'object') {
-        return JSON.stringify(result, null, 2);
-    }
-    
-    return result.toString();
+  if (result === undefined) return "İşlem başarılı (dönen veri yok)";
+  if (typeof result === 'boolean') return result ? "İşlem başarılı" : "İşlem başarısız";
+  if (result === null) return "Sonuç bulunamadı";
+  if (typeof result === 'object') return JSON.stringify(result, null, 2);
+  return result.toString();
 }
