@@ -4,7 +4,7 @@ import {
     setMap, setGeocoder, setInfoWindow, getMap,
     getSpecialMarkers, addSpecialMarker, removeSpecialMarker, setSpecialMarkers,
     getSpecialRoutePolylines, setSpecialRoutePolylineAtIndex, clearSpecialMarkers,
-    getSelectedRouteIndex, getRouteMarkers, getSpecialMarkerMode, setSpecialMarkerMode, // Import specialMarkerMode
+    getSelectedRouteIndex, getRouteMarkers, getSpecialMarkerMode, setSpecialMarkerMode,
     addRouteMarkerArray, addRouteDataItem,
     setSelectedRouteIndex, updateRouteDataStationsCount
 } from './app-state.js';
@@ -22,6 +22,7 @@ import {
  * @public
  */
 export function initMap() {
+    console.log("initMap called: Google Maps API is ready."); // Add a console log to confirm
     setGeocoder(new google.maps.Geocoder());
     setInfoWindow(new google.maps.InfoWindow());
 
@@ -83,6 +84,11 @@ export function initMap() {
 
     // The button to toggle special marker mode
     document.getElementById('toggleSpecialMarker').addEventListener('click', toggleSpecialMarkerPlacementMode);
+
+    // *** IMPORTANT CHANGE: Call initMarkers() from here! ***
+    // This ensures initMarkers runs ONLY after the Google Maps API is fully loaded
+    // and the 'google' object is available.
+    initMarkers();
 }
 
 /**
@@ -91,9 +97,10 @@ export function initMap() {
  * @public
  */
 export async function initMarkers() {
+    console.log("initMarkers called."); // Add a console log to confirm
     await initializeFirebase();
     let routes = await getDatabaseMarkers();
-    drawInitialRoutes(routes);
+    await drawInitialRoutes(routes); // Ensure drawInitialRoutes is awaited
 
     // After all initial routes and markers are drawn and processed, update all special marker routes
     await updateAllSpecialMarkerRoutes();
@@ -408,6 +415,3 @@ async function drawInitialRoutes(routes) {
     // After all initial routes and markers are drawn and processed, update the places list
     await updatePlacesListForRoute();
 }
-
-
-initMarkers();

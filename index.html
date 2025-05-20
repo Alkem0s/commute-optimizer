@@ -133,52 +133,60 @@
     </p>
   </div>
 
-  <script>
+  <script type="module">
+    // Import initMap from your app.js. This makes initMap available
+    // for the Google Maps API to call once it's loaded.
+    import { initMap } from './app.js';
+    window.initMap = initMap; // Expose initMap to the global scope for the Google Maps script
+
     function toggleSidebar() {
-      document.getElementById("sidebar").classList.toggle("open");
+        document.getElementById("sidebar").classList.toggle("open");
     }
 
     function loadPage(url) {
-      document.getElementById("sidebar").classList.remove("open");
-      document.querySelectorAll(".screen").forEach(el => el.style.display = "none");
+        document.getElementById("sidebar").classList.remove("open");
+        document.querySelectorAll(".screen").forEach(el => el.style.display = "none");
 
-      // Clear main content first
-      const container = document.getElementById("main-content");
-      container.innerHTML = '';
-      container.style.display = "block";
+        // Clear main content first
+        const container = document.getElementById("main-content");
+        container.innerHTML = '';
+        container.style.display = "block";
 
-      fetch(url)
-        .then(response => response.text())
-        .then(html => {
-          container.innerHTML = html;
+        fetch(url)
+            .then(response => response.text())
+            .then(html => {
+                container.innerHTML = html;
 
-          // If it's the map page, initialize the map
-          if (url === "map.html") {
-            // Load the Google Maps API and initialize map
-            loadMapScript();
-          }
-          
-          // For API test page
-          if (url === "api-test.html") {
-            loadApiTestScript();
-          }
-        })
-        .catch(err => console.error("Page load error:", err));
+                // If it's the map page, initialize the map
+                if (url === "map.html") {
+                    // Load the Google Maps API script.
+                    // This will call the globally exposed window.initMap once loaded.
+                    loadGoogleMapsScript();
+                }
+                
+                // For API test page (assuming this also has its own script to load)
+                if (url === "api-test.html") {
+                    loadApiTestScript(); // You'll need to define this function if it's external
+                }
+            })
+            .catch(err => console.error("Page load error:", err));
     }
 
-    function loadMapScript() {
-      // Remove any existing Google Maps script
-      document.querySelectorAll('script[src*="maps.googleapis.com"]').forEach(script => script.remove());
-      
-      window.api.getApiKey().then((apiKey) => {
-        const script = document.createElement("script");
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places&callback=initMap`;
-        script.async = true;
-        script.defer = true;
-        document.body.appendChild(script);
-      }).catch(err => {
-        console.error("Failed to load API key:", err);
-      });
+    function loadGoogleMapsScript() {
+        // Remove any existing Google Maps script to prevent duplicates
+        document.querySelectorAll('script[src*="maps.googleapis.com"]').forEach(script => script.remove());
+        
+        window.api.getApiKey().then((apiKey) => {
+            const script = document.createElement("script");
+            // The `callback=initMap` here will call the `window.initMap` function
+            // after the Google Maps API script has finished loading.
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            document.body.appendChild(script);
+        }).catch(err => {
+            console.error("Failed to load API key:", err);
+        });
     }
 
     function loadApiTestScript() {
@@ -196,11 +204,8 @@
         document.getElementById("loading-screen").style.display = "none";
       }, 2500);
     });
-  </script>
-
-  <script type="module">
-    import { initMap } from './app.js';
-    window.initMap = initMap;
+    window.toggleSidebar = toggleSidebar;
+    window.loadPage = loadPage;
   </script>
 </body>
 </html>
