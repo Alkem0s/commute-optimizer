@@ -13,6 +13,8 @@ let geocoder = null;
 let infoWindow = null;
 let selectedRouteIndex = -1; // -1 means no route is selected, 0+ means a DB route is selected
 
+let maxWalkDuration = 10; // Maximum walk duration for the route in minutes, used in route calculations
+
 // Getter functions
 export const getMap = () => map;
 export const getRouteMarkers = () => routeMarkers;
@@ -27,6 +29,8 @@ export const getGeocoder = () => geocoder;
 export const getInfoWindow = () => infoWindow;
 export const getSelectedRouteIndex = () => selectedRouteIndex;
 
+export const getMaxWalkDuration = () => maxWalkDuration; // Getter for max walk duration
+
 // Setter functions
 export const setMap = (newMap) => { map = newMap; };
 export const setRouteMarkers = (newRouteMarkers) => { routeMarkers = newRouteMarkers; };
@@ -40,6 +44,14 @@ export const setSpecialMarkerMode = (mode) => { specialMarkerMode = mode; }; // 
 export const setGeocoder = (newGeocoder) => { geocoder = newGeocoder; };
 export const setInfoWindow = (newInfoWindow) => { infoWindow = newInfoWindow; };
 export const setSelectedRouteIndex = (index) => { selectedRouteIndex = index; };
+
+export const setMaxWalkDuration = (duration) => {
+    if (typeof duration === 'number' && duration >= 0) {
+        maxWalkDuration = duration;
+    } else {
+        console.error('Invalid max walk duration:', duration);
+    }
+}
 
 // Functions to modify arrays
 export const addMarkerToRoute = (routeIndex, marker) => {

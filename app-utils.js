@@ -2,7 +2,8 @@
 import {
     getMap, getGeocoder, getInfoWindow, getRouteMarkers,
     getSpecialMarkers, getSpecialRoutePolylines,
-    getSelectedRouteIndex, getRoutePolylines, getRouteData, getSpecialMarkerMode, // Import getSpecialMarkerMode
+    getSelectedRouteIndex, getRoutePolylines, getRouteData, getSpecialMarkerMode, 
+    getMaxWalkDuration,
     setRoutePolylineAtIndex, setSpecialRoutePolylineAtIndex,
     setSelectedRouteIndex, updateRouteDataStationsCount, // setSelectedRouteIndex is here
     removeSpecialMarker
@@ -441,6 +442,9 @@ export async function calculateRoute(routeMarkers, isSpecialRoute = false, route
             throw new Error('Google Maps API key not found');
         }
 
+        // Determine travel mode
+        const travelMode = isSpecialRoute ? "WALK" : "DRIVE"; // [Change 1] Travel mode for special routes is WALK
+
         // Create intermediates (waypoints) for the Routes API
         const intermediates = routeMarkers.slice(1, -1).map(marker => {
             return {
@@ -472,9 +476,10 @@ export async function calculateRoute(routeMarkers, isSpecialRoute = false, route
                 }
             },
             intermediates: intermediates,
-            travelMode: "DRIVE",
+            travelMode: travelMode, // Use the determined travel mode
+            // Conditionally add routingPreference based on travelMode
+            ...(travelMode === "DRIVE" || travelMode === "TWO_WHEELER" ? { routingPreference: "TRAFFIC_AWARE" } : {}), // Conditionally include routingPreference
             optimizeWaypointOrder: true,
-            routingPreference: "TRAFFIC_AWARE",
             computeAlternativeRoutes: false,
             languageCode: "en-US",
             units: "METRIC"
@@ -513,7 +518,12 @@ export async function calculateRoute(routeMarkers, isSpecialRoute = false, route
 
             // Extract route information
             const totalDistance = parseInt(route.distanceMeters || 0);
-            const totalDuration = parseInt(route.duration?.replace('s', '') || 0);
+            const totalDuration = parseInt(route.duration?.replace('s', '') || 0); // Duration in seconds
+
+            // If it's a special route and duration is over 15 minutes, change color to red
+            if (isSpecialRoute && totalDuration > (getMaxWalkDuration() * 60)) { // 15 minutes in seconds
+                routeColor = '#FF0000'; // Red color
+            }
 
             // Use the correct field name for optimized waypoint indices
             const waypointOrder = route.optimized_intermediate_waypoint_index || [];
@@ -992,9 +1002,7 @@ export function calculateRouteForIndex(routeIndex) {
     // Use a custom color for each route based on index
     const routeColors = [
         '#4285F4', // Blue
-        '#DB4437', // Red
         '#F4B400', // Yellow
-        '#0F9D58', // Green
         '#9C27B0', // Purple
         '#FF9800', // Orange
         '#795548', // Brown
