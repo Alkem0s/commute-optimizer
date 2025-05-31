@@ -3,144 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Passenger</title>
+    <title>API Test Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Existing styles */
-        .form-container {
-            max-width: 600px;
-            margin: 20px auto;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        /* Custom styles for Inter font and general body styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top */
+            min-height: 100vh; /* Ensure it takes full viewport height */
+            padding: 20px; /* Add some padding around the content */
+            box-sizing: border-box; /* Include padding in element's total width and height */
         }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        input, select {
+        .container {
+            background-color: #ffffff;
+            padding: 2.5rem; /* Increased padding */
+            border-radius: 1rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Stronger shadow */
+            max-width: 900px; /* Increased max-width for better layout */
             width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
+            margin-top: 20px; /* Margin from top */
+        }
+        .form-fields {
+            display: none; /* Hidden by default */
+        }
+        input[type="text"], input[type="number"], select {
+            border: 1px solid #d1d5db; /* Light gray border */
+            padding: 0.75rem 1rem; /* Comfortable padding */
+            border-radius: 0.5rem; /* Rounded corners for inputs */
+            width: 100%;
+            box-sizing: border-box; /* Include padding in element's total width */
+            transition: border-color 0.2s ease-in-out; /* Smooth transition on focus */
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue border on focus */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); /* Light blue shadow on focus */
         }
         button {
-            background-color: #4CAF50;
+            background-color: #4f46e5; /* Indigo */
             color: white;
-            padding: 10px 20px;
-            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
             cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 1000;
+        button:hover {
+            background-color: #4338ca; /* Darker indigo */
+            transform: translateY(-1px); /* Slight lift effect */
         }
-
-        .modal-content {
-            position: relative;
-            background-color: #fff;
-            margin: 15% auto;
-            padding: 20px;
-            width: 300px;
-            text-align: center;
-            border-radius: 5px;
-            animation: modalSlide 0.3s ease-out;
+        button:active {
+            transform: translateY(0); /* Press effect */
+            box-shadow: none;
         }
-
-        @keyframes modalSlide {
-            from {transform: translateY(-100%); opacity: 0;}
-            to {transform: translateY(0); opacity: 1;}
+        #result {
+            background-color: #e0f2fe; /* Light blue background */
+            border: 1px solid #90cdf4; /* Blue border */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1.5rem;
+            white-space: pre-wrap; /* Preserve whitespace and wrap text */
+            word-break: break-all; /* Break long words */
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; /* Monospace font for results */
+            font-size: 0.9rem;
+            color: #2b6cb0; /* Darker blue text */
         }
-
-        .modal-ok {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            margin-top: 15px;
-            cursor: pointer;
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+                border-radius: 0.75rem;
+            }
+            button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="form-container">
-        <h2>Add New Passenger</h2>
-        <form id="passengerForm">
-            <div class="form-group">
-                <label for="dahili_gosterim_adi">Internal Display Name:</label>
-                <input type="text" id="dahili_gosterim_adi" required>
-            </div>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">API Test Form</h1>
 
-            <div class="form-group">
-                <label for="gider_yeri">Destination Code:</label>
-                <input type="text" id="gider_yeri" required>
-            </div>
-
-            <div class="form-group">
-                <label for="gider_yeri_tanim">Destination Description:</label>
-                <input type="text" id="gider_yeri_tanim" required>
-            </div>
-
-            <div class="form-group">
-                <label for="servis_kullanimi">Service Usage:</label>
-                <select id="servis_kullanimi" required>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
+        <form class="api-test-form space-y-6">
+            <div class="mb-4">
+                <label for="api-method" class="block text-gray-700 text-sm font-semibold mb-2">API Metodu Seçin:</label>
+                <select id="api-method" class="block w-full px-4 py-3 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">-- Metot Seçin --</option>
+                    <optgroup label="Yolcu Metotları">
+                        <option value="getAllPassengers">Tüm Yolcuları Getir</option>
+                        <option value="getPassenger">Yolcu Getir (ID ile)</option>
+                        <option value="setPassenger">Yolcu Ayarla/Ekle</option>
+                        <option value="deletePassenger">Yolcu Sil</option>
+                        <option value="searchPassengers">Yolcu Ara</option>
+                    </optgroup>
+                    <optgroup label="Rota Metotları">
+                        <option value="getAllRoutes">Tüm Rotaları Getir</option>
+                        <option value="getRoute">Rota Getir (ID ile)</option>
+                        <option value="setRoute">Rota Ayarla/Ekle</option>
+                        <option value="deleteRoute">Rota Sil</option>
+                        <option value="addPassengerToRoute">Yolcu Rotaya Ekle</option>
+                        <option value="removePassengerFromRoute">Yolcu Rotadan Çıkar</option>
+                    </optgroup>
+                    <optgroup label="Araç Metotları">
+                        <option value="getAllVehicles">Tüm Araçları Getir</option>
+                        <option value="getVehicle">Araç Getir (ID ile)</option>
+                        <option value="setVehicle">Araç Ayarla/Ekle</option>
+                        <option value="deleteVehicle">Araç Sil</option>
+                        <option value="assignVehicleToRoute">Aracı Rotaya Ata</option>
+                    </optgroup>
                 </select>
             </div>
 
-            <div class="form-group">
-                <label for="servis_no">Service Number:</label>
-                <input type="text" id="servis_no" required>
+            <div id="getPassenger-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Yolcu Getir</h3>
+                <div>
+                    <label for="getPassenger-id" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID:</label>
+                    <input type="text" id="getPassenger-id" class="w-full" placeholder="Yolcu ID girin">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="servise_binis_saati">Pickup Time:</label>
-                <input type="time" id="servise_binis_saati" required>
+            <div id="setPassenger-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Yolcu Ayarla/Ekle</h3>
+                <div>
+                    <label for="setPassenger-id" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID:</label>
+                    <input type="text" id="setPassenger-id" class="w-full" placeholder="Yolcu ID girin (boşsa yeni oluşturulur)">
+                </div>
+                <div>
+                    <label for="setPassenger-routeId" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID (ROUTE):</label>
+                    <input type="text" id="setPassenger-routeId" class="w-full" placeholder="Yolcunun atanacağı rota ID'si (örn: ksk1)">
+                </div>
+                <div>
+                    <label for="setPassenger-address" class="block text-gray-700 text-sm font-semibold mb-2">Adres (ADDRESS):</label>
+                    <input type="text" id="setPassenger-address" class="w-full" placeholder="Yolcunun adresi (örn: ksk bozo st.)">
+                </div>
+                <div>
+                    <label for="setPassenger-destinationDescription" class="block text-gray-700 text-sm font-semibold mb-2">Hedef Açıklaması (DESTINATION_DESCRIPTION):</label>
+                    <input type="text" id="setPassenger-destinationDescription" class="w-full" placeholder="Hedefin açıklaması">
+                </div>
+                <div>
+                    <label for="setPassenger-destinationPlace" class="block text-gray-700 text-sm font-semibold mb-2">Hedef Yeri (DESTINATION_PLACE):</label>
+                    <input type="text" id="setPassenger-destinationPlace" class="w-full" placeholder="Hedefin yeri (örn: C.05.4)">
+                </div>
+                <div>
+                    <label for="setPassenger-distanceToAddress" class="block text-gray-700 text-sm font-semibold mb-2">Adrese Uzaklık (DISTANCE_TO_ADDRESS):</label>
+                    <input type="text" id="setPassenger-distanceToAddress" class="w-full" placeholder="Adrese uzaklık (örn: 290)">
+                </div>
+                <div>
+                    <label for="setPassenger-serviceUsage" class="block text-gray-700 text-sm font-semibold mb-2">Servis Kullanımı (SERVICE_USAGE):</label>
+                    <input type="text" id="setPassenger-serviceUsage" class="w-full" placeholder="Servis kullanımı (örn: TRUE/FALSE)">
+                </div>
+                <div>
+                    <label for="setPassenger-stopAddress" class="block text-gray-700 text-sm font-semibold mb-2">Durak Adresi (STOP_ADDRESS):</label>
+                    <input type="text" id="setPassenger-stopAddress" class="w-full" placeholder="Durak adresi (örn: yap st.)">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="servise_inis_saati">Drop-off Time:</label>
-                <input type="time" id="servise_inis_saati" required>
+            <div id="deletePassenger-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Yolcu Sil</h3>
+                <div>
+                    <label for="deletePassenger-id" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID:</label>
+                    <input type="text" id="deletePassenger-id" class="w-full" placeholder="Silinecek yolcu ID'si">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="servis_sira">Service Order:</label>
-                <input type="number" id="servis_sira" required>
+            <div id="searchPassengers-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Yolcu Ara</h3>
+                <div>
+                    <label for="searchPassengers-term" class="block text-gray-700 text-sm font-semibold mb-2">Arama Terimi:</label>
+                    <input type="text" id="searchPassengers-term" class="w-full" placeholder="Arama terimi (ID, rota ID, adres)">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="servis_adresi">Service Address:</label>
-                <input type="text" id="servis_adresi" required>
+            <div id="getRoute-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Rota Getir</h3>
+                <div>
+                    <label for="getRoute-id" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID:</label>
+                    <input type="text" id="getRoute-id" class="w-full" placeholder="Rota ID girin">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="ikametgah_adresine_uzaklik">Residence Distance (km):</label>
-                <input type="number" step="0.1" id="ikametgah_adresine_uzaklik" required>
+            <div id="setRoute-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Rota Ayarla/Ekle</h3>
+                <div>
+                    <label for="setRoute-id" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID:</label>
+                    <input type="text" id="setRoute-id" class="w-full" placeholder="Rota ID girin (boşsa yeni oluşturulur)">
+                </div>
+                <div>
+                    <label for="setRoute-vehicleId" class="block text-gray-700 text-sm font-semibold mb-2">Araç ID:</label>
+                    <input type="text" id="setRoute-vehicleId" class="w-full" placeholder="Rotaya atanacak araç ID'si">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="setRoute-lat" class="block text-gray-700 text-sm font-semibold mb-2">Durak Enlem:</label>
+                        <input type="number" step="any" id="setRoute-lat" class="w-full" placeholder="Durak enlemi (örn: 40.7128)">
+                    </div>
+                    <div>
+                        <label for="setRoute-long" class="block text-gray-700 text-sm font-semibold mb-2">Durak Boylam:</label>
+                        <input type="number" step="any" id="setRoute-long" class="w-full" placeholder="Durak boylamı (örn: -74.0060)">
+                    </div>
+                </div>
+                <div>
+                    <label for="setRoute-passengerIds" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID'leri (virgülle ayırın):</label>
+                    <input type="text" id="setRoute-passengerIds" class="w-full" placeholder="Örn: p1, p2, p3">
+                </div>
             </div>
 
-            <button type="submit">Add Passenger</button>
+            <div id="deleteRoute-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Rota Sil</h3>
+                <div>
+                    <label for="deleteRoute-id" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID:</label>
+                    <input type="text" id="deleteRoute-id" class="w-full" placeholder="Silinecek rota ID'si">
+                </div>
+            </div>
+
+            <div id="addPassengerToRoute-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Yolcu Rotaya Ekle</h3>
+                <div>
+                    <label for="addPassengerToRoute-routeId" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID:</label>
+                    <input type="text" id="addPassengerToRoute-routeId" class="w-full" placeholder="Yolcunun ekleneceği rota ID'si">
+                </div>
+                <div>
+                    <label for="addPassengerToRoute-passengerId" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID:</label>
+                    <input type="text" id="addPassengerToRoute-passengerId" class="w-full" placeholder="Eklenecek yolcu ID'si">
+                </div>
+            </div>
+
+            <div id="removePassengerFromRoute-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Yolcu Rotadan Çıkar</h3>
+                <div>
+                    <label for="removePassengerFromRoute-routeId" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID:</label>
+                    <input type="text" id="removePassengerFromRoute-routeId" class="w-full" placeholder="Yolcunun çıkarılacağı rota ID'si">
+                </div>
+                <div>
+                    <label for="removePassengerFromRoute-passengerId" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID:</label>
+                    <input type="text" id="removePassengerFromRoute-passengerId" class="w-full" placeholder="Çıkarılacak yolcu ID'si">
+                </div>
+            </div>
+
+            <div id="getVehicle-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Araç Getir</h3>
+                <div>
+                    <label for="getVehicle-id" class="block text-gray-700 text-sm font-semibold mb-2">Araç ID:</label>
+                    <input type="text" id="getVehicle-id" class="w-full" placeholder="Araç ID girin">
+                </div>
+            </div>
+
+            <div id="setVehicle-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Araç Ayarla/Ekle</h3>
+                <div>
+                    <label for="setVehicle-id" class="block text-gray-700 text-sm font-semibold mb-2">Araç ID:</label>
+                    <input type="text" id="setVehicle-id" class="w-full" placeholder="Araç ID girin (boşsa yeni oluşturulur)">
+                </div>
+                <div>
+                    <label for="setVehicle-plate" class="block text-gray-700 text-sm font-semibold mb-2">Plaka:</label>
+                    <input type="text" id="setVehicle-plate" class="w-full" placeholder="Araç plakası">
+                </div>
+                <div>
+                    <label for="setVehicle-capacity" class="block text-gray-700 text-sm font-semibold mb-2">Kapasite:</label>
+                    <input type="number" id="setVehicle-capacity" class="w-full" placeholder="Araç kapasitesi">
+                </div>
+                <div>
+                    <label for="setVehicle-vehicleManager" class="block text-gray-700 text-sm font-semibold mb-2">Araç Yöneticisi (VEHICLE_MANAGER):</label>
+                    <input type="text" id="setVehicle-vehicleManager" class="w-full" placeholder="Araç yöneticisi (örn: Johannus Doerius the III.)">
+                </div>
+            </div>
+
+            <div id="deleteVehicle-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Araç Sil</h3>
+                <div>
+                    <label for="deleteVehicle-id" class="block text-gray-700 text-sm font-semibold mb-2">Araç ID:</label>
+                    <input type="text" id="deleteVehicle-id" class="w-full" placeholder="Silinecek araç ID'si">
+                </div>
+            </div>
+
+            <div id="assignVehicleToRoute-fields" class="form-fields space-y-4">
+                <h3 class="text-xl font-semibold text-gray-700">Aracı Rotaya Ata</h3>
+                <div>
+                    <label for="assignVehicleToRoute-routeId" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID:</label>
+                    <input type="text" id="assignVehicleToRoute-routeId" class="w-full" placeholder="Aracın atanacağı rota ID'si">
+                </div>
+                <div>
+                    <label for="assignVehicleToRoute-vehicleId" class="block text-gray-700 text-sm font-semibold mb-2">Araç ID:</label>
+                    <input type="text" id="assignVehicleToRoute-vehicleId" class="w-full" placeholder="Atanacak araç ID'si">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full">API Metodunu Çalıştır</button>
         </form>
-        <div id="message"></div>
-    </div>
 
-    <!-- Success Modal -->
-    <div id="successModal" class="modal">
-        <div class="modal-content">
-            <h3>Yolcu Eklendi! 🎉</h3>
-            <p>Yolcu başarıyla kaydedildi.</p>
-            <button class="modal-ok" onclick="closeModal()">OK</button>
-        </div>
+        <div id="result" class="hidden">
+            </div>
     </div>
-
-    <script src="add-passenger.js"></script>
 </body>
 </html>

@@ -123,16 +123,6 @@
     <a href="#">About</a>
   </div>
 
-  <div id="loading-screen">
-    <img src="images/world-globe.gif" alt="Loading..." class="loading-earth">
-    <p class="loading-text">
-      <span>L</span><span>o</span><span>a</span><span>d</span><span>i</span><span>n</span><span>g</span>
-      <span>&nbsp;</span>
-      <span>M</span><span>a</span><span>p</span>
-      <span>.</span><span>.</span><span>.</span>
-    </p>
-  </div>
-
   <script type="module">
     // Import initMap from your app.js. This makes initMap available
     // for the Google Maps API to call once it's loaded.
@@ -168,6 +158,11 @@
                 if (url === "api-test.html") {
                     loadApiTestScript(); // You'll need to define this function if it's external
                 }
+
+                if (url === "add-passenger.html") {
+                    // If you have any specific initialization for add-passenger page, do it here
+                    loadAddPassengerScript();
+                }
             })
             .catch(err => console.error("Page load error:", err));
     }
@@ -191,6 +186,16 @@
 
     function loadApiTestScript() {
       // Remove previous API test scripts
+      document.querySelectorAll('script[src="api_test.js"]').forEach(script => script.remove());
+      
+      const script = document.createElement("script");
+      script.type = "module";
+      script.src = "api_test.js";
+      document.body.appendChild(script);
+    }
+
+    function loadAddPassengerScript() {
+      // Remove previous add-passenger scripts
       document.querySelectorAll('script[src="api_test.js"]').forEach(script => script.remove());
       
       const script = document.createElement("script");
