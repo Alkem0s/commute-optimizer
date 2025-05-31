@@ -4,133 +4,105 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Passenger List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
             padding: 20px;
+            box-sizing: border-box;
         }
-        .search-container {
-            margin-bottom: 20px;
-        }
-        #searchInput {
+        .container {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 1200px; /* Increased max-width for better layout */
             width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
+            margin-top: 20px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 1.5rem;
         }
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem 1rem;
             text-align: left;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            font-size: 0.875rem;
         }
         tr:nth-child(even) {
-            background-color: #f9f9f9;
+            background-color: #f8fafc;
         }
-        .edit-btn {
-            background-color: #4CAF50;
+        tr:hover {
+            background-color: #f0f4f8;
+        }
+        .checkbox-cell {
+            text-align: center;
+        }
+        .select-button {
+            background-color: #4f46e5; /* Indigo */
             color: white;
-            padding: 5px 10px;
-            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
             cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 1.5rem;
+            width: auto;
+            display: inline-block;
         }
-        /* Edit Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 1000;
+        .select-button:hover {
+            background-color: #4338ca; /* Darker indigo */
+            transform: translateY(-1px);
         }
-        .modal-content {
-            background-color: #fff;
-            margin: 15% auto;
-            padding: 20px;
-            width: 600px;
-            border-radius: 5px;
-        }
-        .modal-form-group {
-            margin-bottom: 15px;
+        .select-button:active {
+            transform: translateY(0);
+            box-shadow: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Passenger List</h1>
-        
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search passengers...">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Passenger List</h1>
+
+        <div class="overflow-x-auto">
+            <table id="passengers-table">
+                <thead>
+                    <tr>
+                        <th class="checkbox-cell">Select</th>
+                        <th>Passenger ID</th>
+                        <th>Route ID</th>
+                        <th>Address</th>
+                        <th>Destination Description</th>
+                        <th>Destination Place</th>
+                        <th>Distance to Address</th>
+                        <th>Service Usage</th>
+                        <th>Stop Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
         </div>
 
-        <table id="passengersTable">
-            <thead>
-                <tr>
-                    <th>Internal Name</th>
-                    <th>Destination Code</th>
-                    <th>Destination Description</th>
-                    <th>Service Usage</th>
-                    <th>Service Number</th>
-                    <th>Pickup Time</th>
-                    <th>Drop-off Time</th>
-                    <th>Service Order</th>
-                    <th>Service Address</th>
-                    <th>Residence Distance</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-
-        <!-- Edit Modal -->
-        <div id="editModal" class="modal">
-            <div class="modal-content">
-                <h2>Edit Passenger</h2>
-                <form id="editForm">
-                    <input type="hidden" id="editDocumentId">
-                    
-                    <div class="modal-form-group">
-                        <label>Internal Display Name:</label>
-                        <input type="text" id="editDahiliGosterimAdi" required>
-                    </div>
-                    
-                    <!-- Add all other fields similarly -->
-                    <div class="modal-form-group">
-                        <label>Destination Code:</label>
-                        <input type="text" id="editGiderYeri" required>
-                    </div>
-                    
-                    <div class="modal-form-group">
-                        <label>Destination Description:</label>
-                        <input type="text" id="editGiderYeriTanim" required>
-                    </div>
-                    
-                    <div class="modal-form-group">
-                        <label>Service Usage:</label>
-                        <select id="editServisKullanimi" required>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Add remaining fields following the same pattern -->
-                    
-                    <button type="submit" class="edit-btn">Save Changes</button>
-                    <button type="button" onclick="closeEditModal()">Cancel</button>
-                </form>
-            </div>
+        <div class="text-center">
+            <button id="display-on-map-button" class="select-button">Display Selected on Map</button>
         </div>
     </div>
 
-    <script src="passengers-list.js"></script>
+    <script type="module" src="passengers-list.js"></script>
 </body>
 </html>

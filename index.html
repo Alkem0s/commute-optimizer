@@ -102,7 +102,6 @@
     .loading-text span:nth-child(1) { animation-delay: 0.1s; }
     .loading-text span:nth-child(2) { animation-delay: 0.2s; }
     .loading-text span:nth-child(3) { animation-delay: 0.3s; }
-    /* Add more delays for each letter as needed */
   </style>
 </head>
 <body>
@@ -118,22 +117,25 @@
     <a href="#" onclick="loadPage('add-passenger.html'); toggleSidebar();">Add Passenger</a>
     <a href="#" onclick="loadPage('map.html'); toggleSidebar();">Map</a>
     <a href="#" onclick="loadPage('api-test.html'); toggleSidebar();">API Test</a>
+    <a href="#" onclick="loadPage('passengers-list.html'); toggleSidebar();">Passengers List</a>
     <a href="#">Statistics</a>
     <a href="#">Settings</a>
     <a href="#">About</a>
   </div>
 
   <script type="module">
-    // Import initMap from your app.js. This makes initMap available
-    // for the Google Maps API to call once it's loaded.
+    // Import functions at the top level
     import { initMap } from './app.js';
-    window.initMap = initMap; // Expose initMap to the global scope for the Google Maps script
+    import { setupApiTestPage } from './api_test.js';
+    
+    // Expose initMap to global scope for Google Maps API
+    window.initMap = initMap;
 
     function toggleSidebar() {
         document.getElementById("sidebar").classList.toggle("open");
     }
 
-    function loadPage(url) {
+    async function loadPage(url) {
         document.getElementById("sidebar").classList.remove("open");
         document.querySelectorAll(".screen").forEach(el => el.style.display = "none");
 
@@ -142,29 +144,24 @@
         container.innerHTML = '';
         container.style.display = "block";
 
-        fetch(url)
-            .then(response => response.text())
-            .then(html => {
-                container.innerHTML = html;
+        try {
+            const response = await fetch(url);
+            const html = await response.text();
+            container.innerHTML = html;
 
-                // If it's the map page, initialize the map
-                if (url === "map.html") {
-                    // Load the Google Maps API script.
-                    // This will call the globally exposed window.initMap once loaded.
-                    loadGoogleMapsScript();
-                }
-                
-                // For API test page (assuming this also has its own script to load)
-                if (url === "api-test.html") {
-                    loadApiTestScript(); // You'll need to define this function if it's external
-                }
-
-                if (url === "add-passenger.html") {
-                    // If you have any specific initialization for add-passenger page, do it here
-                    loadAddPassengerScript();
-                }
-            })
-            .catch(err => console.error("Page load error:", err));
+            // Handle specific page initialization
+            if (url === "map.html") {
+                loadGoogleMapsScript();
+            } else if (url === "api-test.html" || url === "add-passenger.html" || url === "passengers-list.html") {
+                // Use a small delay to ensure DOM is ready
+                setTimeout(() => {
+                    setupApiTestPage();
+                }, 50);
+            }
+        } catch (err) {
+            console.error("Page load error:", err);
+            container.innerHTML = "<p>Error loading page. Please try again.</p>";
+        }
     }
 
     function loadGoogleMapsScript() {
@@ -173,8 +170,6 @@
         
         window.api.getApiKey().then((apiKey) => {
             const script = document.createElement("script");
-            // The `callback=initMap` here will call the `window.initMap` function
-            // after the Google Maps API script has finished loading.
             script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places&callback=initMap`;
             script.async = true;
             script.defer = true;
@@ -184,31 +179,16 @@
         });
     }
 
-    function loadApiTestScript() {
-      // Remove previous API test scripts
-      document.querySelectorAll('script[src="api_test.js"]').forEach(script => script.remove());
-      
-      const script = document.createElement("script");
-      script.type = "module";
-      script.src = "api_test.js";
-      document.body.appendChild(script);
-    }
-
-    function loadAddPassengerScript() {
-      // Remove previous add-passenger scripts
-      document.querySelectorAll('script[src="api_test.js"]').forEach(script => script.remove());
-      
-      const script = document.createElement("script");
-      script.type = "module";
-      script.src = "api_test.js";
-      document.body.appendChild(script);
-    }
-
     window.addEventListener("load", () => {
       setTimeout(() => {
-        document.getElementById("loading-screen").style.display = "none";
+        const loadingScreen = document.getElementById("loading-screen");
+        if (loadingScreen) {
+          loadingScreen.style.display = "none";
+        }
       }, 2500);
     });
+
+    // Expose functions to global scope
     window.toggleSidebar = toggleSidebar;
     window.loadPage = loadPage;
   </script>
