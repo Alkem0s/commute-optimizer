@@ -6,70 +6,88 @@
   <title>Optimal Route Calculator</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* HAMBURGER MENU STİLİ */
+    /* FIXED HEADER STİLİ */
     .header {
       background-color: white;
       color: black;
       display: flex;
-      justify-content: flex-start;
+      justify-content: space-between;
       align-items: center;
-      gap: 16px; 
-      padding: 3px 12px;  
-      height: 44px;
+      padding: 8px 20px;
+      height: 60px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .menu-icon {
-      font-size: 24px;
-      cursor: pointer;    
-      color: #1e1e2f;
-      position: relative;
-      z-index: 1100;
-    }
-
-    .sidebar {
-     position: fixed;
-     top: 0;
-     left: -250px;
-     width: 250px;
-     height: 100%;
-     background-color: white;
-     color: white;
-     padding: 80px 20px 20px 20px;
-     transition: left 0.3s ease;
-     z-index: 1000;
-    }
-
-    .sidebar.open {
+      position: fixed;
+      top: 0;
       left: 0;
+      right: 0;
+      z-index: 1000;
     }
 
-    .sidebar a {
-      display: block;
-      margin: 20px 0;
-      color: black;
+    .logo {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .nav-menu {
+      display: flex;
+      gap: 30px;
+      align-items: center;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .nav-item {
+      color: #1e1e2f;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .nav-item:hover {
+      background-color: #f0f0f0;
       text-decoration: none;
     }
 
-    .sidebar a:hover {
-      text-decoration: underline;
+    .nav-item.active {
+      background-color: #1e1e2f;
+      color: white;
     }
 
-    .menu-icon {
-      font-size: 20px;
+    .help-button {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: #1e1e2f;
+      color: white;
+      border: none;
       cursor: pointer;
-      color: #1e1e2f; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
     }
 
-    .spacer {
-      flex: 1; 
-    }
-    
-    .logo {
-      height: 50px;      
-      object-fit: contain;
+    .help-button:hover {
+      background-color: #333;
+      transform: scale(1.1);
     }
 
+    /* Ana içerik için üst boşluk */
+    #main-content {
+      margin-top: 60px;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* Loading screen stilleri */
     #loading-screen {
       position: fixed;
       top: 0;
@@ -102,26 +120,63 @@
     .loading-text span:nth-child(1) { animation-delay: 0.1s; }
     .loading-text span:nth-child(2) { animation-delay: 0.2s; }
     .loading-text span:nth-child(3) { animation-delay: 0.3s; }
+
+    /* Responsive tasarım */
+    @media (max-width: 768px) {
+      .nav-menu {
+        gap: 15px;
+      }
+      
+      .nav-item {
+        padding: 6px 12px;
+        font-size: 14px;
+      }
+      
+      .header {
+        padding: 8px 15px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .nav-menu {
+        gap: 10px;
+      }
+      
+      .nav-item {
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+      
+      .logo {
+        height: 35px;
+      }
+      
+      .help-button {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="menu-icon" onclick="toggleSidebar()">☰</div>
-    <div class="spacer"></div>
     <img src="images/logo.png" alt="Logo" class="logo">
+    
+    <nav class="nav-menu">
+      <a href="#" class="nav-item" onclick="loadPage('add-passenger.html')" data-page="add-passenger">Add Passenger</a>
+      <a href="#" class="nav-item" onclick="loadPage('map.html')" data-page="map">Map</a>
+      <a href="#" class="nav-item" onclick="loadPage('api-test.html')" data-page="api-test">API Test</a>
+      <a href="#" class="nav-item" onclick="loadPage('passengers-list.html')" data-page="passengers-list">Passengers List</a>
+      <a href="#" class="nav-item" onclick="loadPage('statistics.html')" data-page="statistics">Statistics</a>
+      <a href="#" class="nav-item" onclick="loadPage('settings.html')" data-page="settings">Settings</a>
+      <a href="#" class="nav-item" onclick="loadPage('about.html')" data-page="about">About</a>
+    </nav>
+
+    <button class="help-button" onclick="showPageHelp()" title="Page Help">?</button>
   </div>
 
   <div id="main-content" class="screen"></div>
-
-  <div class="sidebar" id="sidebar">
-    <a href="#" onclick="loadPage('add-passenger.html'); toggleSidebar();">Add Passenger</a>
-    <a href="#" onclick="loadPage('map.html'); toggleSidebar();">Map</a>
-    <a href="#" onclick="loadPage('api-test.html'); toggleSidebar();">API Test</a>
-    <a href="#" onclick="loadPage('passengers-list.html'); toggleSidebar();">Passengers List</a>
-    <a href="#">Statistics</a>
-    <a href="#">Settings</a>
-    <a href="#">About</a>
-  </div>
 
   <script type="module">
   // Import functions at the top level
@@ -130,12 +185,9 @@
   // Expose initMap to global scope for Google Maps API
   window.initMap = initMap;
 
-  function toggleSidebar() {
-      document.getElementById("sidebar").classList.toggle("open");
-  }
+  let currentPage = '';
 
   async function loadPage(url) {
-      document.getElementById("sidebar").classList.remove("open");
       document.querySelectorAll(".screen").forEach(el => el.style.display = "none");
 
       // Clear main content first and remove any existing page-specific scripts
@@ -144,6 +196,16 @@
       container.style.display = "block";
       document.querySelectorAll('script[data-page-script]').forEach(script => script.remove());
 
+      // Update active nav item
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      const pageId = url.replace('.html', '');
+      const activeItem = document.querySelector(`[data-page="${pageId}"]`);
+      if (activeItem) {
+          activeItem.classList.add('active');
+      }
+
+      // Store current page for help function
+      currentPage = pageId;
 
       try {
           const response = await fetch(url);
@@ -153,12 +215,13 @@
           // Handle specific page initialization
           if (url === "map.html") {
               loadGoogleMapsScript();
+              loadPageScript('map.js');
           } else if (url === "api-test.html") {
               loadPageScript('api-test.js');
           } else if (url === "add-passenger.html") {
-              loadPageScript('add-passenger.js'); // Updated to add-passenger.js
+              loadPageScript('add-passenger.js');
           } else if (url === "passengers-list.html") {
-              loadPageScript('passengers-list.js'); // Updated to passengers-list.js
+              loadPageScript('passengers-list.js');
           }
       } catch (err) {
           console.error("Page load error:", err);
@@ -169,8 +232,8 @@
   function loadPageScript(scriptName) {
       const script = document.createElement('script');
       script.src = `./${scriptName}`;
-      script.type = 'module'; // Assuming modules
-      script.setAttribute('data-page-script', 'true'); // Mark script for easy removal
+      script.type = 'module';
+      script.setAttribute('data-page-script', 'true');
       document.body.appendChild(script);
   }
 
@@ -189,6 +252,21 @@
       });
   }
 
+  function showPageHelp() {
+      const helpMessages = {
+          'add-passenger': 'Bu sayfada yeni yolcu ekleyebilirsiniz.',
+          'map': 'Harita görünümü ve rota planlaması.',
+          'api-test': 'API bağlantılarını test edebilirsiniz.',
+          'passengers-list': 'Tüm yolcuları görüntüleyebilirsiniz.',
+          'statistics': 'İstatistikleri görüntüleyebilirsiniz.',
+          'settings': 'Uygulama ayarlarını düzenleyebilirsiniz.',
+          'about': 'Uygulama hakkında bilgi alabilirsiniz.'
+      };
+
+      const message = helpMessages[currentPage] || 'Bu sayfa hakkında yardım bilgisi bulunmuyor.';
+      alert(message); // Geçici olarak alert kullanıyoruz, sonra modal yapabilirsiniz
+  }
+
   window.addEventListener("load", () => {
     setTimeout(() => {
       const loadingScreen = document.getElementById("loading-screen");
@@ -199,8 +277,8 @@
   });
 
   // Expose functions to global scope
-  window.toggleSidebar = toggleSidebar;
   window.loadPage = loadPage;
+  window.showPageHelp = showPageHelp;
 </script>
 </body>
 </html>
