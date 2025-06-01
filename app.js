@@ -6,7 +6,7 @@ import {
     getSpecialRoutePolylines, setSpecialRoutePolylineAtIndex, clearSpecialMarkers,
     getSelectedRouteIndex, getRouteMarkers, getSpecialMarkerMode, setSpecialMarkerMode,
     addRouteMarkerArray, addRouteDataItem, getRouteData, getGeocoder,
-    setSelectedRouteIndex, updateRouteDataStationsCount
+    setSelectedRouteIndex, updateRouteDataStationsCount, getMaxWalkDuration,
 } from './app-state.js';
 import {
     calculateRoute, findClosestMarkerInAllRoutes,
@@ -15,6 +15,8 @@ import {
     updatePlacesListForRoute, selectRoute,
     getDistanceBetweenCoords, calculateRouteDistanceMarkers, calculateRouteDistanceCoords
 } from './app-utils.js';
+import { optimizeRoute } from './optimizer.js'; 
+import { getAllVehicles } from './api.js';
 
 /**
  * Initializes the Google Map and sets up event listeners.
@@ -85,12 +87,40 @@ export function initMap() {
     // The button to toggle special marker mode
     document.getElementById('toggleSpecialMarker').addEventListener('click', toggleSpecialMarkerPlacementMode);
 
-    // *** IMPORTANT CHANGE: Call initMarkers() from here! ***
-    // This ensures initMarkers runs ONLY after the Google Maps API is fully loaded
-    // and the 'google' object is available.
-    initMarkers();
+    const runPythonOptimizerButton = document.getElementById('runPythonOptimizer');
 
-    // Removed the call to testAddPassengers()
+    if (runPythonOptimizerButton) {
+        runPythonOptimizerButton.addEventListener('click', async () => {
+            document.getElementById('result').innerText = "Optimizer is running...";
+            try {
+                let locationMarkers = getSpecialMarkers();
+                // Convert markers to the format expected by the optimizer
+                const locations = locationMarkers.map(marker => ({
+                    lat: marker.getPosition().lat(),
+                    lng: marker.getPosition().lng()
+                }));
+                // Ensure we have at least one location
+                if (locations.length === 0) {
+                    throw new Error('No locations found for optimization.');
+                }
+                // Ensure we have vehicles available
+                const vehicles = getAllVehicles();
+                if (vehicles.length === 0) {
+                    throw new Error('No vehicles found for optimization.');
+                }
+                
+                // Call optimizeRoute from optimizer.js
+                const optimizedStops = await optimizeRoute(locations, vehicles, getMaxWalkDuration());
+                // Pass the output to the handler function
+                handleOptimizerResult(optimizedStops);
+            } catch (error) {
+                console.error('Error during optimization:', error);
+                document.getElementById('result').innerText = `Error: ${error.message}`;
+            }
+        });
+    }
+
+    initMarkers();
 }
 
 /**
@@ -119,6 +149,16 @@ export async function drawSpecialMarkerRoutes(locations) {
     for (const loc of locations) {
         const position = new google.maps.LatLng(loc.lat, loc.lng);
         await addSpecialMarkerToMap(position);
+    }
+}
+
+// Dummy function to handle the optimizer result (you will implement this later)
+function handleOptimizerResult() {
+    console.log("Python Optimizer will run and result will be handled here!");
+    // You can add some temporary UI feedback here if needed
+    const resultDiv = document.getElementById('result');
+    if (resultDiv) {
+        resultDiv.innerText = "Optimizer is running...";
     }
 }
 

@@ -1,14 +1,16 @@
+import { calculateRouteDistanceCoords } from './app-utils.js';
+
 const distanceCache = new Map();
 const pendingPromises = new Map();
 
 /**
  * Optimizes vehicle routes using your existing distance calculation API
- * @param {Array<Location>} locations - Passenger locations
- * @param {Array<Vehicle>} vehicles - Vehicles with capacity
+ * @param {Array<Object>} locations - Passenger locations
+ * @param {Array<Object>} vehicles - Vehicles with capacity
  * @param {number} walkingDistance - Max walking radius in meters
- * @returns {Promise<Array<Location>>} Optimized stops
+ * @returns {Promise<Array<Object>>} Optimized stops
  */
-async function optimizeRoute(locations, vehicles, walkingDistance) {
+export async function optimizeRoute(locations, vehicles, walkingDistance) {
     // Validate input
     if (!locations.every(l => 'lat' in l && 'lng' in l)) {
         throw new Error('Invalid location format');
@@ -27,14 +29,14 @@ async function optimizeRoute(locations, vehicles, walkingDistance) {
 
     // Prepare input for OR-Tools
     const input = {
-        clusters: {
-            centers: clusterCenters,
-            members: clusters,
-        },
-        passengers: locations,
-        vehicleCapacities: vehicles.map(v => v.capacity),
-        walkingRadius: walkingDistance,
-        distanceMatrix: distanceMatrix
+    clusters: {
+        centers: clusterCenters,
+        members: clusters,
+    },
+    passengers: locations,
+    vehicleCapacities: Object.values(vehicles).map(v => v.capacity),
+    walkingRadius: walkingDistance,
+    distanceMatrix: distanceMatrix
     };
 
     return executePythonOptimizer(input);
@@ -106,7 +108,7 @@ async function clusterPassengers(locations, radius) {
             if (visited.has(j)) continue;
             candidates.push(j);
             distancePromises.push(
-                cachedRouteDistance(loc, locations[j], 'WALKING')
+                cachedRouteDistance(loc, locations[j], 'WALK')
             );
         }
 
@@ -161,5 +163,5 @@ async function buildDistanceMatrix(centers) {
  * @returns {Promise<Object>} Optimized routes
  */
 async function executePythonOptimizer(input) {
-  return window.optimizer.runOptimizer(input);
+  return window.pythonOptimizer.runOptimizer(input);
 }

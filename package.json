@@ -15,5 +15,13 @@
   "dependencies": {
     "firebase": "^11.7.1",
     "firebase-admin": "^13.2.0"
+  },
+  "build": {
+    "extraResources": [
+      {
+        "from": "route_optimizer.exe",
+        "to": "executables"
+      }
+    ]
   }
 }

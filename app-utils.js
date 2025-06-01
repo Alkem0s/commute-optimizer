@@ -8,7 +8,7 @@ import {
     setSelectedRouteIndex, updateRouteDataStationsCount, // setSelectedRouteIndex is here
     removeSpecialMarker
 } from './app-state.js';
-import { getAllRoutes } from './api.js'; // Assuming api.js is a sibling module
+import { getAllRoutes } from './api.js';
 
 const test_markers = [
     { lat: 38.46595521912682, lng: 27.351150512695312 },
@@ -328,7 +328,7 @@ export async function calculateRouteDistanceCoords(lat1, lng1, lat2, lng2, trave
             }
         },
         travelMode: travelMode,
-        routingPreference: "TRAFFIC_AWARE",
+        ...(travelMode === "DRIVE" ? { routingPreference: "TRAFFIC_AWARE" } : {}),
         units: "METRIC"
     };
 

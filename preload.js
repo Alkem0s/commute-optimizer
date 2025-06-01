@@ -53,7 +53,7 @@ contextBridge.exposeInMainWorld(
   }
 );
 
-contextBridge.exposeInMainWorld('optimization', {
+contextBridge.exposeInMainWorld('pythonOptimizer', {
   runOptimizer: async (input) => {
     try {
       return await ipcRenderer.invoke('run-optimizer', input);

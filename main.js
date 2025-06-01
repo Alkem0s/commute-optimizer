@@ -21,10 +21,16 @@ const db = admin.firestore();
 
 ipcMain.handle('run-optimizer', async (_, input) => {
   return new Promise((resolve, reject) => {
-    const optimizerPath = path.join(
-      app.getAppPath(),
-      'optimizer' + (process.platform === 'win32' ? '.exe' : '')
-    );
+    const optimizerPath = process.env.NODE_ENV === 'development'
+      ? path.join(
+          __dirname, 
+          'route_optimizer' + (process.platform === 'win32' ? '.exe' : '')
+        )
+      : path.join(
+          process.resourcesPath,
+          'executables',
+          'route_optimizer' + (process.platform === 'win32' ? '.exe' : '')
+        );
 
     const optimizerProcess = spawn(optimizerPath, [], {
       stdio: ['pipe', 'pipe', 'pipe']
@@ -33,7 +39,7 @@ ipcMain.handle('run-optimizer', async (_, input) => {
     let result = '';
     let errorOutput = '';
 
-    optimizerProcess.stdin.write(JSON.stringify(input));
+    optimizerProcess.stdin.write(JSON.stringify(input), 'utf-8');
     optimizerProcess.stdin.end();
 
     optimizerProcess.stdout.on('data', (data) => {
@@ -49,10 +55,15 @@ ipcMain.handle('run-optimizer', async (_, input) => {
         try {
           resolve(JSON.parse(result));
         } catch (e) {
+          console.error("Optimizer output:", result);  // Log raw output
           reject(new Error(`Output parsing failed: ${e.message}`));
         }
       } else {
-        reject(new Error(`Optimizer failed (code ${code}): ${errorOutput}`));
+        // Add detailed error diagnostics:
+        const errorMsg = `Optimizer failed (code ${code}): ${errorOutput || 'No error output'}\n`;
+        console.error("Optimizer stderr:", errorOutput);
+        console.error("Optimizer stdout:", result);
+        reject(new Error(errorMsg));
       }
     });
 
@@ -74,6 +85,8 @@ app.whenReady().then(() => {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
+      enableRemoteModule: false, // Disable remote module for security
+      sandbox: true, // Enable sandboxing for additional security
     },
   });
 

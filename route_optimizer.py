@@ -4,6 +4,7 @@ Linear bus route optimization script.
 Designed for non-overlapping linear bus routes.
 """
 
+import os
 import sys
 import json
 import numpy as np
@@ -346,7 +347,7 @@ def run_test_case():
     
     return result
 
-TEST = True  # Set to True for testing, False for production
+TEST = False  # Set to True for testing, False for production
 
 def main():
     """Main function to process input and return optimized routes."""
@@ -378,13 +379,15 @@ def main():
             run_test_case()
             
     except Exception as e:
-        # Handle errors gracefully
+        # Add detailed error logging
         import traceback
-        error_result = {
+        error_info = {
             "error": str(e),
-            "traceback": traceback.format_exc()
+            "traceback": traceback.format_exc(),
+            "sys_path": sys.path,
+            "cwd": os.getcwd()
         }
-        print(json.dumps(error_result))
+        print(json.dumps(error_info))
         sys.exit(1)
 
 if __name__ == "__main__":

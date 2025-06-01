@@ -1,5 +1,10 @@
 node_modules/
+build/
+dist/
+__pycache__/
 *.json
 
 optimized_routes.png
+route_optimizer
+route_optimizer.spec
 *.png
