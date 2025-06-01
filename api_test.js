@@ -22,21 +22,32 @@ async function ensureFirebaseInitialized() {
 export async function setupApiTestPage() {
   try {
     await ensureFirebaseInitialized();
-    
-    // Wait a bit to ensure DOM is ready
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    await new Promise(resolve => setTimeout(resolve, 100)); // DOM ready
+
+    // --- START: Passenger List Page Detection ---
+    const passengerListContainer = document.getElementById('passengers-list-container');
+    if (passengerListContainer) {
+      // We are on passengers-list.html, initialize its specific logic
+      console.log("Passenger list page detected. Initializing...");
+      await initializePassengerListPageLogic(api); // Pass the imported 'api' module
+      return; // Important: Stop further execution of form-specific logic for this page
+    }
+    // --- END: Passenger List Page Detection ---
+
+    // Original logic for form-based pages (api-test.html, add-passenger.html)
     const methodSelect = document.getElementById('api-method');
     const resultDiv = document.getElementById('result');
     const apiForm = document.querySelector('.api-test-form');
 
     if (!apiForm) {
-      console.warn("API form not found, retrying...");
-      setTimeout(() => setupApiTestPage(), 200);
+      // This warning will now only appear if the page is not passengers-list.html 
+      // AND is expected to have a form but doesn't.
+      // The problematic retry loop "setTimeout(() => setupApiTestPage(), 200);" has been removed.
+      console.warn("API form (.api-test-form) not found on this page. This page might not function as expected if it relies on this form.");
       return;
     }
 
-    // Remove existing event listener if any
+    // Remove existing event listener if any for the form
     if (currentFormHandler) {
       apiForm.removeEventListener('submit', currentFormHandler);
     }
@@ -44,29 +55,23 @@ export async function setupApiTestPage() {
     // Create new form handler
     currentFormHandler = async (event) => {
       event.preventDefault();
-
-      // Try to get method from selector, then from hidden input, then default to setPassenger
       let selectedMethod = 'setPassenger';
       
       if (methodSelect && methodSelect.value) {
         selectedMethod = methodSelect.value;
       } else {
-        // Check for hidden input (used in add-passenger.html)
         const hiddenMethodInput = document.getElementById('api-method');
         if (hiddenMethodInput && hiddenMethodInput.value) {
           selectedMethod = hiddenMethodInput.value;
         }
       }
-
       console.log('Selected API method:', selectedMethod);
-      
       if (resultDiv) {
         resultDiv.style.display = 'block';
         resultDiv.innerHTML = 'İşlem yapılıyor...';
       }
-
       try {
-        const result = await handleApiMethod(selectedMethod);
+        const result = await handleApiMethod(selectedMethod); // handleApiMethod should use the 'api' module directly
         if (resultDiv) {
           resultDiv.innerHTML = `<strong>Sonuç:</strong><br><pre>${formatResult(result)}</pre>`;
         }
@@ -77,13 +82,9 @@ export async function setupApiTestPage() {
         }
       }
     };
-
-    // Add new event listener
     apiForm.addEventListener('submit', currentFormHandler);
 
-    // Setup method selector if it exists (for api-test.html)
     if (methodSelect) {
-      // Remove existing listeners
       const newMethodSelect = methodSelect.cloneNode(true);
       methodSelect.parentNode.replaceChild(newMethodSelect, methodSelect);
       
@@ -93,14 +94,10 @@ export async function setupApiTestPage() {
         const targetFields = document.getElementById(`${selected}-fields`);
         if (targetFields) targetFields.style.display = 'block';
       });
-      
-      // Trigger initial display
       if (newMethodSelect.value) {
         newMethodSelect.dispatchEvent(new Event('change'));
       }
     } else {
-      // For pages without method selector (like add-passenger.html)
-      // Show the appropriate form fields based on hidden input
       const hiddenMethodInput = document.getElementById('api-method');
       if (hiddenMethodInput && hiddenMethodInput.value) {
         const targetFields = document.getElementById(`${hiddenMethodInput.value}-fields`);
@@ -110,10 +107,9 @@ export async function setupApiTestPage() {
         }
       }
     }
-
-    console.log("API test page setup completed");
+    console.log("API test page setup completed for a form-based page.");
   } catch (error) {
-    console.error("Setup failed:", error);
+    console.error("Setup failed in setupApiTestPage:", error);
   }
 }
 
@@ -255,4 +251,124 @@ function formatResult(result) {
   if (result === null) return "Sonuç bulunamadı";
   if (typeof result === 'object') return JSON.stringify(result, null, 2);
   return result.toString();
+}
+
+let allPassengersData = [];
+let currentSortCriteria = 'name'; // Default sort: 'name' or 'route'
+
+function displayPassengerListError(message) {
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const listContainer = document.getElementById('passengers-list-container');
+    const noPassengersMessage = document.getElementById('no-passengers-message');
+    const errorMessageContainer = document.getElementById('error-message');
+    const errorTextElement = document.getElementById('error-text');
+
+    if (loadingIndicator) loadingIndicator.style.display = 'none';
+    if (listContainer) listContainer.innerHTML = '';
+    if (noPassengersMessage) noPassengersMessage.style.display = 'none';
+    
+    if (errorMessageContainer && errorTextElement) {
+        errorTextElement.textContent = `Error: ${message}. Please check the console for more details.`;
+        errorMessageContainer.classList.remove('hidden');
+    } else {
+        console.error("Error display elements not found for passenger list:", message);
+    }
+}
+
+function renderPassengersList() {
+    const listContainer = document.getElementById('passengers-list-container');
+    const noPassengersMessage = document.getElementById('no-passengers-message');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const errorMessageContainer = document.getElementById('error-message');
+
+
+    if (!listContainer || !noPassengersMessage || !loadingIndicator || !errorMessageContainer) {
+        console.error("One or more passenger list display elements are missing.");
+        return;
+    }
+
+    listContainer.innerHTML = ''; 
+
+    if (allPassengersData.length === 0) {
+        noPassengersMessage.style.display = 'block';
+        loadingIndicator.style.display = 'none';
+        errorMessageContainer.classList.add('hidden');
+        return;
+    }
+    
+    noPassengersMessage.style.display = 'none';
+    errorMessageContainer.classList.add('hidden');
+
+    let sortedPassengers = [...allPassengersData];
+    if (currentSortCriteria === 'name') {
+        sortedPassengers.sort((a, b) => a.id.localeCompare(b.id));
+    } else if (currentSortCriteria === 'route') {
+        sortedPassengers.sort((a, b) => {
+            const routeA = a.data.ROUTE || ''; 
+            const routeB = b.data.ROUTE || '';
+            return routeA.localeCompare(routeB);
+        });
+    }
+
+    sortedPassengers.forEach(passenger => {
+        const card = document.createElement('div');
+        card.className = 'passenger-card'; // Uses style from passengers-list.html
+        
+        card.innerHTML = `
+            <h3 class="text-xl font-semibold text-indigo-700 mb-2 capitalize">${passenger.id.replace(/_/g, ' ')}</h3>
+            <p class="text-sm text-gray-600 mb-1"><strong>Route:</strong> ${passenger.data.ROUTE || 'N/A'}</p>
+            <p class="text-sm text-gray-600 mb-1"><strong>Address:</strong> ${passenger.data.ADDRESS || 'N/A'}</p>
+            <p class="text-sm text-gray-600 mb-1"><strong>Destination:</strong> ${passenger.data.DESTINATION_PLACE || 'N/A'}</p>
+            <p class="text-sm text-gray-600"><strong>Stop Address:</strong> ${passenger.data.STOP_ADDRESS || 'N/A'}</p>
+        `;
+        listContainer.appendChild(card);
+    });
+    loadingIndicator.style.display = 'none';
+}
+
+async function initializePassengerListPageLogic(apiModule) {
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const listContainer = document.getElementById('passengers-list-container');
+    const errorMessageContainer = document.getElementById('error-message');
+    const noPassengersMessage = document.getElementById('no-passengers-message');
+    const sortByNameButton = document.getElementById('sortByNameBtn'); // Ensure ID matches HTML
+    const sortByRouteButton = document.getElementById('sortByRouteBtn'); // Ensure ID matches HTML
+
+    if (!listContainer || !loadingIndicator || !errorMessageContainer || !noPassengersMessage || !sortByNameButton || !sortByRouteButton) {
+        console.error("Essential elements for passenger list page are missing. Cannot initialize.");
+        if(loadingIndicator) loadingIndicator.style.display = 'none';
+        // Optionally display an error in a known fallback element if others are missing
+        return;
+    }
+    
+    loadingIndicator.style.display = 'block';
+    errorMessageContainer.classList.add('hidden');
+    noPassengersMessage.style.display = 'none';
+    listContainer.innerHTML = '';
+
+    try {
+        // Firebase should already be initialized by ensureFirebaseInitialized() in setupApiTestPage
+        const passengersObject = await apiModule.getAllPassengers();
+        
+        allPassengersData = Object.entries(passengersObject).map(([id, data]) => ({
+            id: id,
+            data: data 
+        }));
+
+        renderPassengersList();
+
+    } catch (error) {
+        console.error("Failed to load passengers:", error);
+        displayPassengerListError(error.message || "Could not fetch passenger data.");
+    }
+
+    sortByNameButton.addEventListener('click', () => {
+        currentSortCriteria = 'name';
+        renderPassengersList();
+    });
+
+    sortByRouteButton.addEventListener('click', () => {
+        currentSortCriteria = 'route';
+        renderPassengersList();
+    });
 }
