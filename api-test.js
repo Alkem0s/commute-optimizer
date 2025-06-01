@@ -4,7 +4,6 @@ import * as api from './api.js';
 let isFirebaseInitialized = false;
 let currentFormHandler = null;
 
-// Initialize Firebase once
 async function ensureFirebaseInitialized() {
   if (!isFirebaseInitialized) {
     try {
@@ -18,44 +17,27 @@ async function ensureFirebaseInitialized() {
   }
 }
 
-// Main setup function that can be called multiple times safely
 export async function setupApiTestPage() {
   try {
     await ensureFirebaseInitialized();
-    await new Promise(resolve => setTimeout(resolve, 100)); // DOM ready
+    await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to ensure DOM is fully painted
 
-    // --- START: Passenger List Page Detection ---
-    const passengerListContainer = document.getElementById('passengers-list-container');
-    if (passengerListContainer) {
-      // We are on passengers-list.html, initialize its specific logic
-      console.log("Passenger list page detected. Initializing...");
-      await initializePassengerListPageLogic(api); // Pass the imported 'api' module
-      return; // Important: Stop further execution of form-specific logic for this page
-    }
-    // --- END: Passenger List Page Detection ---
-
-    // Original logic for form-based pages (api-test.html, add-passenger.html)
     const methodSelect = document.getElementById('api-method');
     const resultDiv = document.getElementById('result');
     const apiForm = document.querySelector('.api-test-form');
 
     if (!apiForm) {
-      // This warning will now only appear if the page is not passengers-list.html 
-      // AND is expected to have a form but doesn't.
-      // The problematic retry loop "setTimeout(() => setupApiTestPage(), 200);" has been removed.
       console.warn("API form (.api-test-form) not found on this page. This page might not function as expected if it relies on this form.");
       return;
     }
 
-    // Remove existing event listener if any for the form
     if (currentFormHandler) {
       apiForm.removeEventListener('submit', currentFormHandler);
     }
 
-    // Create new form handler
     currentFormHandler = async (event) => {
       event.preventDefault();
-      let selectedMethod = 'setPassenger';
+      let selectedMethod = 'setPassenger'; // Default, but should be set by select or hidden input
       
       if (methodSelect && methodSelect.value) {
         selectedMethod = methodSelect.value;
@@ -71,7 +53,7 @@ export async function setupApiTestPage() {
         resultDiv.innerHTML = 'İşlem yapılıyor...';
       }
       try {
-        const result = await handleApiMethod(selectedMethod); // handleApiMethod should use the 'api' module directly
+        const result = await handleApiMethod(selectedMethod);
         if (resultDiv) {
           resultDiv.innerHTML = `<strong>Sonuç:</strong><br><pre>${formatResult(result)}</pre>`;
         }
@@ -113,7 +95,6 @@ export async function setupApiTestPage() {
   }
 }
 
-// Handle different API methods
 async function handleApiMethod(method) {
   switch (method) {
     case 'getAllPassengers':
@@ -238,13 +219,11 @@ async function handleApiMethod(method) {
   }
 }
 
-// Helper function to safely get input values
 function getInputValue(id) {
   const element = document.getElementById(id);
   return element ? element.value.trim() : '';
 }
 
-// Format results for display
 function formatResult(result) {
   if (result === undefined) return "İşlem başarılı (dönen veri yok)";
   if (typeof result === 'boolean') return result ? "İşlem başarılı" : "İşlem başarısız";
@@ -253,122 +232,7 @@ function formatResult(result) {
   return result.toString();
 }
 
-let allPassengersData = [];
-let currentSortCriteria = 'name'; // Default sort: 'name' or 'route'
-
-function displayPassengerListError(message) {
-    const loadingIndicator = document.getElementById('loading-indicator');
-    const listContainer = document.getElementById('passengers-list-container');
-    const noPassengersMessage = document.getElementById('no-passengers-message');
-    const errorMessageContainer = document.getElementById('error-message');
-    const errorTextElement = document.getElementById('error-text');
-
-    if (loadingIndicator) loadingIndicator.style.display = 'none';
-    if (listContainer) listContainer.innerHTML = '';
-    if (noPassengersMessage) noPassengersMessage.style.display = 'none';
-    
-    if (errorMessageContainer && errorTextElement) {
-        errorTextElement.textContent = `Error: ${message}. Please check the console for more details.`;
-        errorMessageContainer.classList.remove('hidden');
-    } else {
-        console.error("Error display elements not found for passenger list:", message);
-    }
-}
-
-function renderPassengersList() {
-    const listContainer = document.getElementById('passengers-list-container');
-    const noPassengersMessage = document.getElementById('no-passengers-message');
-    const loadingIndicator = document.getElementById('loading-indicator');
-    const errorMessageContainer = document.getElementById('error-message');
-
-
-    if (!listContainer || !noPassengersMessage || !loadingIndicator || !errorMessageContainer) {
-        console.error("One or more passenger list display elements are missing.");
-        return;
-    }
-
-    listContainer.innerHTML = ''; 
-
-    if (allPassengersData.length === 0) {
-        noPassengersMessage.style.display = 'block';
-        loadingIndicator.style.display = 'none';
-        errorMessageContainer.classList.add('hidden');
-        return;
-    }
-    
-    noPassengersMessage.style.display = 'none';
-    errorMessageContainer.classList.add('hidden');
-
-    let sortedPassengers = [...allPassengersData];
-    if (currentSortCriteria === 'name') {
-        sortedPassengers.sort((a, b) => a.id.localeCompare(b.id));
-    } else if (currentSortCriteria === 'route') {
-        sortedPassengers.sort((a, b) => {
-            const routeA = a.data.ROUTE || ''; 
-            const routeB = b.data.ROUTE || '';
-            return routeA.localeCompare(routeB);
-        });
-    }
-
-    sortedPassengers.forEach(passenger => {
-        const card = document.createElement('div');
-        card.className = 'passenger-card'; // Uses style from passengers-list.html
-        
-        card.innerHTML = `
-            <h3 class="text-xl font-semibold text-indigo-700 mb-2 capitalize">${passenger.id.replace(/_/g, ' ')}</h3>
-            <p class="text-sm text-gray-600 mb-1"><strong>Route:</strong> ${passenger.data.ROUTE || 'N/A'}</p>
-            <p class="text-sm text-gray-600 mb-1"><strong>Address:</strong> ${passenger.data.ADDRESS || 'N/A'}</p>
-            <p class="text-sm text-gray-600 mb-1"><strong>Destination:</strong> ${passenger.data.DESTINATION_PLACE || 'N/A'}</p>
-            <p class="text-sm text-gray-600"><strong>Stop Address:</strong> ${passenger.data.STOP_ADDRESS || 'N/A'}</p>
-        `;
-        listContainer.appendChild(card);
-    });
-    loadingIndicator.style.display = 'none';
-}
-
-async function initializePassengerListPageLogic(apiModule) {
-    const loadingIndicator = document.getElementById('loading-indicator');
-    const listContainer = document.getElementById('passengers-list-container');
-    const errorMessageContainer = document.getElementById('error-message');
-    const noPassengersMessage = document.getElementById('no-passengers-message');
-    const sortByNameButton = document.getElementById('sortByNameBtn'); // Ensure ID matches HTML
-    const sortByRouteButton = document.getElementById('sortByRouteBtn'); // Ensure ID matches HTML
-
-    if (!listContainer || !loadingIndicator || !errorMessageContainer || !noPassengersMessage || !sortByNameButton || !sortByRouteButton) {
-        console.error("Essential elements for passenger list page are missing. Cannot initialize.");
-        if(loadingIndicator) loadingIndicator.style.display = 'none';
-        // Optionally display an error in a known fallback element if others are missing
-        return;
-    }
-    
-    loadingIndicator.style.display = 'block';
-    errorMessageContainer.classList.add('hidden');
-    noPassengersMessage.style.display = 'none';
-    listContainer.innerHTML = '';
-
-    try {
-        // Firebase should already be initialized by ensureFirebaseInitialized() in setupApiTestPage
-        const passengersObject = await apiModule.getAllPassengers();
-        
-        allPassengersData = Object.entries(passengersObject).map(([id, data]) => ({
-            id: id,
-            data: data 
-        }));
-
-        renderPassengersList();
-
-    } catch (error) {
-        console.error("Failed to load passengers:", error);
-        displayPassengerListError(error.message || "Could not fetch passenger data.");
-    }
-
-    sortByNameButton.addEventListener('click', () => {
-        currentSortCriteria = 'name';
-        renderPassengersList();
-    });
-
-    sortByRouteButton.addEventListener('click', () => {
-        currentSortCriteria = 'route';
-        renderPassengersList();
-    });
-}
+// Directly execute the setup logic for api_test.html
+(async () => {
+  await setupApiTestPage();
+})();

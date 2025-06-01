@@ -124,73 +124,84 @@
   </div>
 
   <script type="module">
-    // Import functions at the top level
-    import { initMap } from './app.js';
-    import { setupApiTestPage } from './api_test.js';
-    
-    // Expose initMap to global scope for Google Maps API
-    window.initMap = initMap;
+  // Import functions at the top level
+  import { initMap } from './app.js';
+  
+  // Expose initMap to global scope for Google Maps API
+  window.initMap = initMap;
 
-    function toggleSidebar() {
-        document.getElementById("sidebar").classList.toggle("open");
-    }
+  function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("open");
+  }
 
-    async function loadPage(url) {
-        document.getElementById("sidebar").classList.remove("open");
-        document.querySelectorAll(".screen").forEach(el => el.style.display = "none");
+  async function loadPage(url) {
+      document.getElementById("sidebar").classList.remove("open");
+      document.querySelectorAll(".screen").forEach(el => el.style.display = "none");
 
-        // Clear main content first
-        const container = document.getElementById("main-content");
-        container.innerHTML = '';
-        container.style.display = "block";
+      // Clear main content first and remove any existing page-specific scripts
+      const container = document.getElementById("main-content");
+      container.innerHTML = '';
+      container.style.display = "block";
+      document.querySelectorAll('script[data-page-script]').forEach(script => script.remove());
 
-        try {
-            const response = await fetch(url);
-            const html = await response.text();
-            container.innerHTML = html;
 
-            // Handle specific page initialization
-            if (url === "map.html") {
-                loadGoogleMapsScript();
-            } else if (url === "api-test.html" || url === "add-passenger.html" || url === "passengers-list.html") {
-                // Use a small delay to ensure DOM is ready
-                setTimeout(() => {
-                    setupApiTestPage();
-                }, 50);
-            }
-        } catch (err) {
-            console.error("Page load error:", err);
-            container.innerHTML = "<p>Error loading page. Please try again.</p>";
-        }
-    }
+      try {
+          const response = await fetch(url);
+          const html = await response.text();
+          container.innerHTML = html;
 
-    function loadGoogleMapsScript() {
-        // Remove any existing Google Maps script to prevent duplicates
-        document.querySelectorAll('script[src*="maps.googleapis.com"]').forEach(script => script.remove());
-        
-        window.api.getApiKey().then((apiKey) => {
-            const script = document.createElement("script");
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places&callback=initMap`;
-            script.async = true;
-            script.defer = true;
-            document.body.appendChild(script);
-        }).catch(err => {
-            console.error("Failed to load API key:", err);
-        });
-    }
+          // Handle specific page initialization
+          if (url === "map.html") {
+              loadGoogleMapsScript();
+              loadPageScript('map.js');
+          } else if (url === "api-test.html") {
+              loadPageScript('api-test.js');
+          } else if (url === "add-passenger.html") {
+              loadPageScript('add-passenger.js'); // Updated to add-passenger.js
+          } else if (url === "passengers-list.html") {
+              loadPageScript('passengers-list.js'); // Updated to passengers-list.js
+          }
+      } catch (err) {
+          console.error("Page load error:", err);
+          container.innerHTML = "<p>Error loading page. Please try again.</p>";
+      }
+  }
 
-    window.addEventListener("load", () => {
-      setTimeout(() => {
-        const loadingScreen = document.getElementById("loading-screen");
-        if (loadingScreen) {
-          loadingScreen.style.display = "none";
-        }
-      }, 2500);
-    });
+  function loadPageScript(scriptName) {
+      const script = document.createElement('script');
+      script.src = `./${scriptName}`;
+      script.type = 'module'; // Assuming modules
+      script.setAttribute('data-page-script', 'true'); // Mark script for easy removal
+      document.body.appendChild(script);
+  }
 
-    // Expose functions to global scope
-    window.toggleSidebar = toggleSidebar;
-    window.loadPage = loadPage;
-  </script>
+  function loadGoogleMapsScript() {
+      // Remove any existing Google Maps script to prevent duplicates
+      document.querySelectorAll('script[src*="maps.googleapis.com"]').forEach(script => script.remove());
+      
+      window.api.getApiKey().then((apiKey) => {
+          const script = document.createElement("script");
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places&callback=initMap`;
+          script.async = true;
+          script.defer = true;
+          document.body.appendChild(script);
+      }).catch(err => {
+          console.error("Failed to load API key:", err);
+      });
+  }
+
+  window.addEventListener("load", () => {
+    setTimeout(() => {
+      const loadingScreen = document.getElementById("loading-screen");
+      if (loadingScreen) {
+        loadingScreen.style.display = "none";
+      }
+    }, 2500);
+  });
+
+  // Expose functions to global scope
+  window.toggleSidebar = toggleSidebar;
+  window.loadPage = loadPage;
+</script>
 </body>
 </html>

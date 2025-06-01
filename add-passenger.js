@@ -1,29 +1,80 @@
-// add-passenger.js
-import { setPassenger } from './api.js';
+import { initializeFirebase } from './firebase.js';
+import * as api from './api.js';
 
-document.getElementById('passengerForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+let isFirebaseInitialized = false;
+let currentFormHandler = null;
 
-    // Extract form values
-    const passengerId = document.getElementById('dahili_gosterim_adi').value.trim();
-    const routeId = document.getElementById('gider_yeri').value.trim(); // Destination Code = ROUTE in sample
-    const address = document.getElementById('servis_adresi').value.trim(); // Service Address = STOP_ADDRESS in sample
-
+async function ensureFirebaseInitialized() {
+  if (!isFirebaseInitialized) {
     try {
-        // Save passenger using API (structure: [routeId, address])
-        await setPassenger(passengerId.toLowerCase(), [routeId, address]);
-        
-        // Show success modal
-        document.getElementById('successModal').style.display = 'block';
-        
-        // Reset form
-        document.getElementById('passengerForm').reset();
+      await initializeFirebase();
+      isFirebaseInitialized = true;
     } catch (error) {
-        document.getElementById('message').textContent = "Error adding passenger: " + error.message;
+      console.error("Firebase init failed:", error);
+      alert("Firebase başlatılamadı.");
+      throw error;
     }
-});
+  }
+}
 
-// Close modal function
-window.closeModal = () => {
-    document.getElementById('successModal').style.display = 'none';
-};
+async function handleSetPassenger(event) {
+  event.preventDefault();
+
+  const resultDiv = document.getElementById('result');
+  if (resultDiv) {
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = 'İşlem yapılıyor...';
+  }
+
+  try {
+    const id = document.getElementById('setPassenger-id').value.trim();
+    const routeId = document.getElementById('setPassenger-routeId').value.trim();
+    const address = document.getElementById('setPassenger-address').value.trim();
+    const destinationDescription = document.getElementById('setPassenger-destinationDescription').value.trim();
+    const destinationPlace = document.getElementById('setPassenger-destinationPlace').value.trim();
+    const distanceToAddress = document.getElementById('setPassenger-distanceToAddress').value.trim();
+    const serviceUsage = document.getElementById('setPassenger-serviceUsage').value.trim();
+    const stopAddress = document.getElementById('setPassenger-stopAddress').value.trim();
+
+    if (!id) throw new Error('Yolcu ID boş olamaz');
+
+    const result = await api.setPassenger(id, {
+      ADDRESS: address,
+      DESTINATION_DESCRIPTION: destinationDescription,
+      DESTINATION_PLACE: destinationPlace,
+      DISTANCE_TO_ADDRESS: distanceToAddress,
+      ROUTE: routeId,
+      SERVICE_USAGE: serviceUsage,
+      STOP_ADDRESS: stopAddress
+    });
+
+    if (resultDiv) {
+      resultDiv.innerHTML = `<strong>Sonuç:</strong><br><pre>${formatResult(result)}</pre>`;
+    }
+  } catch (error) {
+    console.error("API error:", error);
+    if (resultDiv) {
+      resultDiv.innerHTML = `<strong>Hata:</strong><br>${error.message}`;
+    }
+  }
+}
+
+function formatResult(result) {
+  if (result === undefined) return "İşlem başarılı (dönen veri yok)";
+  if (typeof result === 'boolean') return result ? "İşlem başarılı" : "İşlem başarısız";
+  if (result === null) return "Sonuç bulunamadı";
+  if (typeof result === 'object') return JSON.stringify(result, null, 2);
+  return result.toString();
+}
+
+// Directly execute the setup logic when the script is parsed
+(async () => {
+  await ensureFirebaseInitialized();
+  const apiForm = document.querySelector('.api-test-form');
+  if (apiForm) {
+    currentFormHandler = handleSetPassenger;
+    apiForm.addEventListener('submit', currentFormHandler);
+  } else {
+    console.error("Form with class 'api-test-form' not found in add-passenger.html");
+  }
+})();
