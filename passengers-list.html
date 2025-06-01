@@ -33,24 +33,112 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        
+        /* Excel-like table styles */
+        .excel-table {
+            border-collapse: collapse;
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .excel-table th {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .excel-table td {
+            border: 1px solid #e2e8f0;
+            padding: 10px 8px;
+            vertical-align: middle;
+        }
+        
+        .excel-table tbody tr:hover {
+            background-color: #f1f5f9;
+        }
+        
+        .excel-table tbody tr.selected {
+            background-color: #dbeafe;
+        }
+        
+        .table-container {
+            max-height: 70vh;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+        
+        .selection-counter {
+            background-color: #3b82f6;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .view-toggle {
+            background-color: #6b7280;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .view-toggle:hover {
+            background-color: #4b5563;
+        }
+        
+        .view-toggle.active {
+            background-color: #3b82f6;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="container mx-auto max-w-5xl">
+    <div class="container mx-auto max-w-7xl">
         <header class="mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Passenger List</h1>
         </header>
 
-        <div class="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex space-x-3">
+        <div class="mb-6 flex flex-col lg:flex-row justify-between items-center gap-4">
+            <div class="flex flex-wrap gap-3">
                 <button id="sortByNameBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75 transition duration-150 ease-in-out">
                     Sort by Name
                 </button>
                 <button id="sortByRouteBtn" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition duration-150 ease-in-out">
                     Sort by Route
                 </button>
+                <button id="selectAllBtn" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 transition duration-150 ease-in-out">
+                    Select All
+                </button>
+                <button id="clearSelectionBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition duration-150 ease-in-out">
+                    Clear Selection
+                </button>
             </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <button id="cardViewBtn" class="view-toggle active">Card View</button>
+                    <button id="tableViewBtn" class="view-toggle">Table View</button>
+                </div>
+                <div id="selectionCounter" class="selection-counter hidden">
+                    0 selected
+                </div>
+                <button id="sendToMapBtn" class="px-6 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-75 transition duration-150 ease-in-out disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                    Send to Map
+                </button>
             </div>
+        </div>
 
         <div id="loading-indicator" class="text-center py-10">
             <div class="loading-spinner mx-auto mb-4"></div>
@@ -65,8 +153,31 @@
             No passengers found in the database.
         </div>
 
+        <!-- Card View Container -->
         <div id="passengers-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        </div>
+
+        <!-- Table View Container -->
+        <div id="passengers-table-container" class="hidden">
+            <div class="table-container">
+                <table id="passengers-table" class="excel-table">
+                    <thead>
+                        <tr>
+                            <th class="w-12">
+                                <input type="checkbox" id="selectAllCheckbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                            </th>
+                            <th class="w-48">Name</th>
+                            <th class="w-32">Route</th>
+                            <th class="w-64">Address</th>
+                            <th class="w-48">Destination</th>
+                            <th class="w-64">Stop Address</th>
+                        </tr>
+                    </thead>
+                    <tbody id="passengers-table-body">
+                    </tbody>
+                </table>
             </div>
+        </div>
     </div>
 
     <script src="passengers-list.js"></script>

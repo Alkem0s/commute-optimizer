@@ -169,7 +169,7 @@ export async function updatePlacesListForRoute() {
             removeButton.className = 'marker-remove-btn';
             removeButton.textContent = 'Remove Passenger';
             removeButton.onclick = () => {
-                removeSpecialMarker(i); // Call remove from app-state.js
+                window.removeMapMarker(specialMarker, -1, i); 
             };
             markerDiv.querySelector('.marker-item').appendChild(removeButton); // Append button to marker item
             specialMarkersList.appendChild(markerDiv);
@@ -1025,55 +1025,62 @@ export function calculateRouteForIndex(routeIndex) {
  * @param {boolean} isSpecial - Whether this is a special marker.
  * @private
  */
-export function showMarkerInfoWindow(marker, routeIndex, markerIndex, isSpecial = false) {
+export async function showMarkerInfoWindow(marker, routeIdx, markerIndex, isSpecialMarker = false) {
     const infoWindow = getInfoWindow();
-    const position = marker.getPosition();
-    const geocoder = getGeocoder();
+    if (!infoWindow) return;
 
-    geocoder.geocode({ location: position }, (results, status) => {
-        const address = status === 'OK' && results[0]
-            ? results[0].formatted_address
-            : 'Address not found';
+    let contentString;
+    const location = marker.getPosition();
+    const address = await new Promise((resolve) => {
+        getGeocoder().geocode({ location }, (results, status) => {
+            resolve(status === 'OK' && results[0] ? results[0].formatted_address : 'Address not found');
+        });
+    });
 
-        // Determine the marker type and label
-        let markerTypeLabel;
-        if (isSpecial) {
-            markerTypeLabel = `Special Marker ${markerIndex + 1}`;
-        } else if (routeIndex >= 0) {
-            markerTypeLabel = `Route ${routeIndex + 1}, Marker ${markerIndex + 1}`;
+    if (isSpecialMarker) {
+        if (marker.passengerData) {
+            // This is a passenger marker (a type of special marker)
+            contentString = `
+                <div class="marker-item">
+                    <strong>Passenger:</strong> ${marker.passengerData.id.replace(/_/g, ' ')}<br>
+                    <strong>Address:</strong> ${marker.passengerData.data?.ADDRESS || address}<br>
+                    <strong>Assigned Route:</strong> ${marker.passengerData.data?.ROUTE || 'N/A'}
+                </div>
+                <div>
+                    <button onclick="window.removeMapMarker(window.getSpecialMarkers()[${markerIndex}], -1, ${markerIndex})">Remove Passenger</button>
+                </div>
+            `;
+        } else {
+            // Generic special marker
+            contentString = `
+                <div class="marker-item">
+                    <strong>Special Marker ${markerIndex + 1}</strong><br>
+                    Lat: ${location.lat().toFixed(6)}<br>
+                    Lng: ${location.lng().toFixed(6)}<br>
+                    Address: ${address}
+                </div>
+                <div>
+                    <button onclick="window.removeMapMarker(window.getSpecialMarkers()[${markerIndex}], -1, ${markerIndex})">Remove Marker</button>
+                </div>
+            `;
         }
-
-        // Create info window content with remove button
-        const content = document.createElement('div');
-        content.innerHTML = `
-            <div>
-                <strong>${markerTypeLabel}</strong><br>
-                Lat: ${position.lat().toFixed(6)}<br>
-                Lng: ${position.lng().toFixed(6)}<br>
+    } else {
+        // Regular DB route marker
+        contentString = `
+            <div class="marker-item">
+                <strong>Route ${routeIdx + 1} Marker ${markerIndex + 1}</strong><br>
+                Lat: ${location.lat().toFixed(6)}<br>
+                Lng: ${location.lng().toFixed(6)}<br>
                 Address: ${address}
             </div>
+            <div>
+                <button onclick="window.removeMapMarker(window.getRouteMarkers()[${routeIdx}]?.[${markerIndex}], ${routeIdx}, ${markerIndex})">Remove Marker</button>
+            </div>
         `;
+    }
 
-        // Add remove button (only if it's a marker within a DB route or special marker)
-        if (isSpecial || routeIndex >= 0) {
-            const removeButton = document.createElement('button');
-            removeButton.className = 'marker-remove-btn';
-            removeButton.textContent = 'Remove Marker';
-            removeButton.onclick = () => {
-                infoWindow.close();
-                if (isSpecial) {
-                    removeSpecialMarker(markerIndex);
-                } else {
-                    removeMarker(marker, routeIndex);
-                }
-            };
-            content.appendChild(removeButton);
-        }
-
-        // Show the info window
-        infoWindow.setContent(content);
-        infoWindow.open(getMap(), marker);
-    });
+    infoWindow.setContent(contentString);
+    infoWindow.open(getMap(), marker);
 }
 
 /**

@@ -5,14 +5,14 @@ import {
     getSpecialMarkers, addSpecialMarker, removeSpecialMarker, setSpecialMarkers,
     getSpecialRoutePolylines, setSpecialRoutePolylineAtIndex, clearSpecialMarkers,
     getSelectedRouteIndex, getRouteMarkers, getSpecialMarkerMode, setSpecialMarkerMode,
-    addRouteMarkerArray, addRouteDataItem,
+    addRouteMarkerArray, addRouteDataItem, getRouteData, getGeocoder,
     setSelectedRouteIndex, updateRouteDataStationsCount
 } from './app-state.js';
 import {
     calculateRoute, findClosestMarkerInAllRoutes,
     createRoutesListContainer, updateRoutesList, calculateRouteForIndex,
     showMarkerInfoWindow, getDatabaseMarkers, removeMarker, updateMarkerLabels,
-    updatePlacesListForRoute, selectRoute as selectRouteUtil,
+    updatePlacesListForRoute, selectRoute,
     getDistanceBetweenCoords, calculateRouteDistanceMarkers, calculateRouteDistanceCoords
 } from './app-utils.js';
 
@@ -89,6 +89,8 @@ export function initMap() {
     // This ensures initMarkers runs ONLY after the Google Maps API is fully loaded
     // and the 'google' object is available.
     initMarkers();
+
+    // Removed the call to testAddPassengers()
 }
 
 /**
@@ -104,6 +106,125 @@ export async function initMarkers() {
 
     // After all initial routes and markers are drawn and processed, update all special marker routes
     await updateAllSpecialMarkerRoutes();
+}
+
+/**
+ * Public API: Draws special marker routes for an array of locations.
+ * This will clear any existing special markers and draw new ones.
+ * @param {Array<Object>} locations - An array of objects, each with 'lat' and 'lng' properties.
+ * @public
+ */
+export async function drawSpecialMarkerRoutes(locations) {
+    clearSpecialMarkers(); // Clear existing special markers
+    for (const loc of locations) {
+        const position = new google.maps.LatLng(loc.lat, loc.lng);
+        await addSpecialMarkerToMap(position);
+    }
+}
+
+/**
+ * Public API: Adds passengers as special markers on the map.
+ * This method geocodes passenger addresses and creates special markers for them.
+ * @param {Array<Object>} passengers - An array of passenger objects with address information.
+ * @param {boolean} [clearExisting=true] - Whether to clear existing special markers before adding new ones.
+ * @returns {Promise<Object>} - Returns an object with success/failure counts and any errors.
+ * @public
+ */
+export async function addPassengersToMap(passengers, clearExisting = true) {
+    const geocoder = getGeocoder();
+    const results = {
+        successful: 0,
+        failed: 0,
+        errors: []
+    };
+
+    if (!geocoder) {
+        const error = 'Geocoder not initialized';
+        console.error(error);
+        results.errors.push(error);
+        return results;
+    }
+
+    if (clearExisting) {
+        clearSpecialMarkers();
+    }
+
+    displayMessage(`Adding ${passengers.length} passengers to map...`);
+
+    for (const passenger of passengers) {
+        try {
+            const address = passenger.data?.ADDRESS;
+            if (!address) {
+                const error = `No address found for passenger: ${passenger.id}`;
+                console.warn(error);
+                results.errors.push(error);
+                results.failed++;
+                continue;
+            }
+
+            // Geocode the address
+            const geocodeResult = await new Promise((resolve, reject) => {
+                geocoder.geocode({ address: address }, (results, status) => {
+                    if (status === 'OK' && results && results.length > 0) {
+                        resolve(results[0]);
+                    } else {
+                        reject(new Error(`Geocoding failed for address "${address}": ${status}`));
+                    }
+                });
+            });
+
+            const position = geocodeResult.geometry.location;
+            const map = getMap();
+            const specialMarkers = getSpecialMarkers();
+
+            // Create special marker with passenger information
+            const passengerMarker = new google.maps.Marker({
+                position: position,
+                map: map,
+                title: `${passenger.id.replace(/_/g, ' ')} - ${passenger.data.ROUTE || 'No Route'}`,
+                icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png', // Green dot for passenger marker
+                draggable: true,
+            });
+
+            // Store passenger data in the marker for info window
+            passengerMarker.passengerData = passenger;
+
+            addSpecialMarker(passengerMarker); // Add to state
+            const specialMarkerIndex = specialMarkers.length - 1;
+
+            // Add click listener for info window with passenger details, using showMarkerInfoWindow
+            passengerMarker.addListener('click', () => {
+                showMarkerInfoWindow(passengerMarker, -1, specialMarkerIndex, true);
+            });
+
+            // Add drag listener to recalculate route
+            passengerMarker.addListener('dragend', async () => {
+                await updateSpecialMarkerRoute(passengerMarker, specialMarkerIndex);
+                await updatePlacesListForRoute();
+            });
+
+            // Calculate initial route for the passenger marker
+            await updateSpecialMarkerRoute(passengerMarker, specialMarkerIndex);
+            results.successful++;
+
+        } catch (error) {
+            const errorMsg = `Failed to add passenger ${passenger.id}: ${error.message}`;
+            console.error(errorMsg);
+            results.errors.push(errorMsg);
+            results.failed++;
+        }
+    }
+
+    await updatePlacesListForRoute(); // Update the places list
+    
+    // Display summary message
+    if (results.successful > 0) {
+        displayMessage(`Successfully added ${results.successful} passenger${results.successful > 1 ? 's' : ''} to map${results.failed > 0 ? `. ${results.failed} failed to add.` : '.'}`);
+    } else {
+        displayMessage(`Failed to add passengers to map. Check console for details.`);
+    }
+
+    return results;
 }
 
 /**
@@ -239,19 +360,24 @@ async function updateAllSpecialMarkerRoutes() {
  * Public API: Removes a marker from the map.
  * @param {google.maps.Marker} marker - The marker object to remove.
  * @param {number} routeIdx - The index of the route the marker belongs to (-1 for special marker, 0+ for DB routes).
- * @param {number} markerIndex - The index of the marker within its route array.
+ * @param {number} markerIndex - The index of the marker within its route array (for DB route) or specialMarkers array (for special marker).
  * @returns {boolean} - True if the marker was successfully removed, false otherwise.
  * @public
  */
 export function removeMapMarker(marker, routeIdx, markerIndex) {
     if (routeIdx === -1) { // Special marker
-        const removed = removeSpecialMarker(markerIndex);
-        if (removed) {
-            updatePlacesListForRoute(); // Update places list after removal
+        // Find the current index of the marker, as markerIndex from click might be stale
+        const actualMarkerIndex = getSpecialMarkers().indexOf(marker);
+        if (actualMarkerIndex !== -1) {
+            const removed = removeSpecialMarker(actualMarkerIndex);
+            if (removed) {
+                updatePlacesListForRoute(); // Update places list after removal
+            }
+            return removed;
         }
-        return removed;
+        return false; // Marker not found in special markers array
     }
-    const removed = removeMarker(marker, routeIdx, markerIndex);
+    const removed = removeMarker(marker, routeIdx); // removeMarker in app-utils takes marker and routeIdx only
     if (removed) {
         updatePlacesListForRoute(); // Update places list after removal
         updateAllSpecialMarkerRoutes(); // Recalculate special routes if a regular marker was removed
@@ -307,21 +433,7 @@ export function calculateMapRoute(markers, isSpecialRoute = false, routeColor = 
  * @public
  */
 export function selectMapRoute(index) {
-    selectRouteUtil(index); // Call the utility function for route selection logic
-}
-
-/**
- * Public API: Draws special marker routes for an array of locations.
- * This will clear any existing special markers and draw new ones.
- * @param {Array<Object>} locations - An array of objects, each with 'lat' and 'lng' properties.
- * @public
- */
-export async function drawSpecialMarkerRoutes(locations) {
-    clearSpecialMarkers(); // Clear existing special markers
-    for (const loc of locations) {
-        const position = new google.maps.LatLng(loc.lat, loc.lng);
-        await addSpecialMarkerToMap(position);
-    }
+    selectRoute(index); // Call the utility function for route selection logic
 }
 
 /**
@@ -415,3 +527,12 @@ async function drawInitialRoutes(routes) {
     // After all initial routes and markers are drawn and processed, update the places list
     await updatePlacesListForRoute();
 }
+
+
+// Expose necessary functions globally for HTML event handlers if needed,
+// or ensure your HTML interacts with these functions via proper module imports/event listeners.
+// This is typically for cases where onclick/etc. are used directly in HTML.
+// For a module-based approach, it's better to attach listeners in JS directly.
+window.removeMapMarker = removeMapMarker;
+window.getSpecialMarkers = getSpecialMarkers;
+window.getRouteMarkers = getRouteMarkers; // Expose for removeMapMarker to access
