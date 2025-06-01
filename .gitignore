@@ -3,6 +3,7 @@ build/
 dist/
 __pycache__/
 *.json
+*.jar
 
 optimized_routes.png
 route_optimizer
