@@ -1,0 +1,5 @@
+- Index page is empty, put some stuff there.
+- Fix or remove hamburger menu
+- Beautify add passenger page
+- Fix map page resolution
+- Beautify passenger list and make it show table by default
