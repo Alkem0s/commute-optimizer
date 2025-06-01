@@ -1,6 +1,77 @@
 import { initializeFirebase } from './firebase.js';
 import * as api from './api.js';
 
+// Add at top of file
+let xlsxLib = null; // Cache for the xlsx library
+
+// Define column mapping (same as in add-passenger.js)
+const EXCEL_COLUMN_MAPPING = {
+  'Dahili Gösterim Adı': 'id',
+  'Servis No': 'ROUTE',
+  'Servis Adresi': 'ADDRESS',
+  'TANIM': 'DESTINATION_DESCRIPTION',
+  'GİDER YERİ': 'DESTINATION_PLACE',
+  'ikametgah adresine uzaklık': 'DISTANCE_TO_ADDRESS',
+  'Servis Kullanımı': 'SERVICE_USAGE',
+  'Servise Biniş': 'STOP_ADDRESS'
+};
+
+// Add this function to generate Excel file
+async function exportToExcel() {
+  try {
+    // Load library if needed
+    if (!xlsxLib) {
+      xlsxLib = await import('https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs');
+    }
+
+    // Create headers in Turkish
+    const headers = Object.keys(EXCEL_COLUMN_MAPPING);
+    
+    // Prepare data array
+    const data = [headers];
+    
+    // Add passenger data
+    allPassengersData.forEach(passenger => {
+      const row = [];
+      
+      // Map each column based on our mapping
+      Object.values(EXCEL_COLUMN_MAPPING).forEach(key => {
+        let value = '';
+        
+        if (key === 'id') {
+          value = passenger.id;
+        } else {
+          value = passenger.data[key] || '';
+        }
+        
+        row.push(value);
+      });
+      
+      data.push(row);
+    });
+
+    // Create worksheet
+    const ws = xlsxLib.utils.aoa_to_sheet(data);
+    
+    // Create workbook
+    const wb = xlsxLib.utils.book_new();
+    xlsxLib.utils.book_append_sheet(wb, ws, "Yolcular");
+    
+    // Generate and download file
+    xlsxLib.writeFile(wb, "yolcular.xlsx");
+    
+  } catch (error) {
+    console.error('Excel export error:', error);
+    alert('Excel dışa aktarımı sırasında bir hata oluştu: ' + error.message);
+  }
+}
+
+// Add this to initializePassengerListPageLogic function
+const exportExcelButton = document.getElementById('exportExcelBtn');
+if (exportExcelButton) {
+  exportExcelButton.addEventListener('click', exportToExcel);
+}
+
 let isFirebaseInitialized = false;
 let allPassengersData = [];
 let currentSortCriteria = 'name'; // Default sort: 'name' or 'route'
