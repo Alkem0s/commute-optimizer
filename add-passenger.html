@@ -9,160 +9,356 @@
         /* Custom styles for Inter font and general body styling */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .main-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding-top: 20px;
+        }
+        
+        .page-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .content-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .input-group {
             display: flex;
-            justify-content: center;
-            align-items: flex-start; /* Align to top */
-            min-height: 100vh; /* Ensure it takes full viewport height */
-            padding: 20px; /* Add some padding around the content */
-            box-sizing: border-box; /* Include padding in element's total width and height */
+            flex-direction: column;
         }
-        .container {
-            background-color: #ffffff;
-            padding: 2.5rem; /* Increased padding */
-            border-radius: 1rem; /* More rounded corners */
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Stronger shadow */
-            max-width: 900px; /* Increased max-width for better layout */
-            width: 100%;
-            margin-top: 20px; /* Margin from top */
+        
+        .input-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
+        
         input[type="text"], input[type="number"], select {
-            border: 1px solid #d1d5db; /* Light gray border */
-            padding: 0.75rem 1rem; /* Comfortable padding */
-            border-radius: 0.5rem; /* Rounded corners for inputs */
+            border: 2px solid #e5e7eb;
+            padding: 0.875rem 1rem;
+            border-radius: 12px;
             width: 100%;
-            box-sizing: border-box; /* Include padding in element's total width */
-            transition: border-color 0.2s ease-in-out; /* Smooth transition on focus */
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            background: rgba(255, 255, 255, 0.8);
         }
+        
         input[type="text"]:focus, input[type="number"]:focus, select:focus {
             outline: none;
-            border-color: #3b82f6; /* Blue border on focus */
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); /* Light blue shadow on focus */
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-1px);
         }
-        button {
-            background-color: #4f46e5; /* Indigo */
+        
+        .button-container {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
+            padding: 0.875rem 2rem;
+            border-radius: 12px;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+            border: none;
+            font-size: 1rem;
+            min-width: 160px;
         }
-        button:hover {
-            background-color: #4338ca; /* Darker indigo */
-            transform: translateY(-1px); /* Slight lift effect */
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(99, 102, 241, 0.4);
         }
-        button:active {
-            transform: translateY(0); /* Press effect */
-            box-shadow: none;
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 0.875rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+            border: none;
+            font-size: 1rem;
+            min-width: 160px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
         }
-        .btn-green {
-            background-color: #059669;
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
         }
-        .btn-green:hover {
-            background-color: #047857;
+        
+        .btn-primary:active, .btn-secondary:active {
+            transform: translateY(0);
         }
+        
         #result {
-            background-color: #e0f2fe; /* Light blue background */
-            border: 1px solid #90cdf4; /* Blue border */
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-top: 1.5rem;
-            white-space: pre-wrap; /* Preserve whitespace and wrap text */
-            word-break: break-all; /* Break long words */
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; /* Monospace font for results */
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #bae6fd;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
             font-size: 0.9rem;
-            color: #2b6cb0; /* Darker blue text */
+            color: #0369a1;
         }
+        
+        #import-progress {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border: 2px solid #93c5fd;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        
+        .progress-content {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #3b82f6;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            background: #bfdbfe;
+            border-radius: 8px;
+            height: 8px;
+        }
+        
+        #progress-bar {
+            background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
+            height: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            width: 0%;
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-subtitle {
+            color: #6b7280;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            .container {
-                padding: 1.5rem;
-                border-radius: 0.75rem;
+            .main-container {
+                padding-top: 10px;
             }
-            button {
+            
+            .page-header, .content-card {
+                padding: 1.5rem;
+                border-radius: 16px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-container {
+                flex-direction: column;
+            }
+            
+            .btn-primary, .btn-secondary {
                 width: 100%;
+            }
+            
+            .page-title {
+                font-size: 2rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="flex justify-between items-center mb-6">
-            <button id="import-excel-btn" class="btn-green hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Excel'den İçe Aktar
-            </button>
-            <h1 class="text-3xl font-bold text-gray-800">Add New Passenger</h1>
-            <div></div> <!-- Spacer for flex layout -->
+    <div class="main-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Yolcu Yönetimi</h1>
+            <p class="page-subtitle">Yeni yolcu ekleyin veya Excel'den toplu içe aktarım yapın</p>
         </div>
         
-        <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display: none;">
-        
-        <div id="import-progress" class="hidden mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div class="flex items-center gap-2 mb-2">
-                <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <span class="font-semibold text-blue-800">Excel dosyası işleniyor...</span>
+        <!-- Excel Import Section -->
+        <div class="content-card" style="margin-bottom: 1.5rem;">
+            <!-- Hidden file input -->
+            <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display: none;">
+            
+            <div class="text-center">
+                <button type="button" id="import-excel-btn" class="btn-secondary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Excel'den İçe Aktar
+                </button>
             </div>
-            <div class="w-full bg-blue-200 rounded-full h-2">
-                <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            
+            <!-- Import Progress -->
+            <div id="import-progress" class="hidden" style="margin-top: 1.5rem;">
+                <div class="progress-content">
+                    <div class="spinner"></div>
+                    <span class="font-semibold text-blue-800">Excel dosyası işleniyor...</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="progress-bar"></div>
+                </div>
+                <div id="progress-text" class="text-sm text-blue-700 mt-2">0 / 0 yolcu işlendi</div>
             </div>
-            <div id="progress-text" class="text-sm text-blue-700 mt-2">0 / 0 yolcu işlendi</div>
         </div>
 
-        <form class="api-test-form space-y-6">
-            <input type="hidden" id="api-method" value="setPassenger">
+        <!-- Main Content -->
+        <div class="content-card">
 
-            <div id="setPassenger-fields" class="form-fields space-y-4" style="display: block;">
-                <h3 class="text-xl font-semibold text-gray-700">Yolcu Ayarla/Ekle</h3>
-                <div>
-                    <label for="setPassenger-id" class="block text-gray-700 text-sm font-semibold mb-2">Yolcu ID:</label>
-                    <input type="text" id="setPassenger-id" class="w-full" placeholder="Yolcu ID girin (boşsa yeni oluşturulur)">
-                </div>
-                <div>
-                    <label for="setPassenger-routeId" class="block text-gray-700 text-sm font-semibold mb-2">Rota ID (ROUTE):</label>
-                    <input type="text" id="setPassenger-routeId" class="w-full" placeholder="Yolcunun atanacağı rota ID'si (örn: ksk1)">
-                </div>
-                <div>
-                    <label for="setPassenger-address" class="block text-gray-700 text-sm font-semibold mb-2">Adres (ADDRESS):</label>
-                    <input type="text" id="setPassenger-address" class="w-full" placeholder="Yolcunun adresi (örn: ksk bozo st.)">
-                </div>
-                <div>
-                    <label for="setPassenger-destinationDescription" class="block text-gray-700 text-sm font-semibold mb-2">Hedef Açıklaması (DESTINATION_DESCRIPTION):</label>
-                    <input type="text" id="setPassenger-destinationDescription" class="w-full" placeholder="Hedefin açıklaması">
-                </div>
-                <div>
-                    <label for="setPassenger-destinationPlace" class="block text-gray-700 text-sm font-semibold mb-2">Hedef Yeri (DESTINATION_PLACE):</label>
-                    <input type="text" id="setPassenger-destinationPlace" class="w-full" placeholder="Hedefin yeri (örn: C.05.4)">
-                </div>
-                <div>
-                    <label for="setPassenger-distanceToAddress" class="block text-gray-700 text-sm font-semibold mb-2">Adrese Uzaklık (DISTANCE_TO_ADDRESS):</label>
-                    <input type="text" id="setPassenger-distanceToAddress" class="w-full" placeholder="Adrese uzaklık (örn: 290)">
-                </div>
-                <div>
-                    <label for="setPassenger-serviceUsage" class="block text-gray-700 text-sm font-semibold mb-2">Servis Kullanımı (SERVICE_USAGE):</label>
-                    <input type="text" id="setPassenger-serviceUsage" class="w-full" placeholder="Servis kullanımı (örn: TRUE/FALSE)">
-                </div>
-                <div>
-                    <label for="setPassenger-stopAddress" class="block text-gray-700 text-sm font-semibold mb-2">Durak Adresi (STOP_ADDRESS):</label>
-                    <input type="text" id="setPassenger-stopAddress" class="w-full" placeholder="Durak adresi (örn: yap st.)">
-                </div>
-            </div>
+            <!-- Form -->
+            <form class="api-test-form">
+                <input type="hidden" id="api-method" value="setPassenger">
 
-            <button type="submit" class="w-full">Yolcu Ekle</button>
-        </form>
+                <div id="setPassenger-fields" class="form-fields" style="display: block;">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="setPassenger-id" class="input-label">Yolcu ID</label>
+                            <input type="text" id="setPassenger-id" placeholder="Boş bırakılırsa otomatik oluşturulur">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="setPassenger-routeId" class="input-label">Rota ID</label>
+                            <input type="text" id="setPassenger-routeId" placeholder="örn: ksk1">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="setPassenger-address" class="input-label">Adres</label>
+                            <input type="text" id="setPassenger-address" placeholder="örn: ksk bozo st.">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="setPassenger-destinationDescription" class="input-label">Hedef Açıklaması</label>
+                            <input type="text" id="setPassenger-destinationDescription" placeholder="Hedefin açıklaması">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="setPassenger-destinationPlace" class="input-label">Hedef Yeri</label>
+                            <input type="text" id="setPassenger-destinationPlace" placeholder="örn: C.05.4">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="setPassenger-distanceToAddress" class="input-label">Adrese Uzaklık</label>
+                            <input type="text" id="setPassenger-distanceToAddress" placeholder="örn: 290">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="setPassenger-serviceUsage" class="input-label">Servis Kullanımı</label>
+                            <input type="text" id="setPassenger-serviceUsage" placeholder="TRUE/FALSE">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="setPassenger-stopAddress" class="input-label">Durak Adresi</label>
+                            <input type="text" id="setPassenger-stopAddress" placeholder="örn: yap st.">
+                        </div>
+                    </div>
+                </div>
 
-        <div id="result" class="hidden">
+                <!-- Button Container -->
+                <div class="button-container">
+                    <button type="submit" class="btn-primary">
+                        Yolcu Ekle
+                    </button>
+                </div>
+            </form>
+
+            <!-- Result Display -->
+            <div id="result" class="hidden"></div>
         </div>
     </div>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script type="module" src="add-passenger.js"></script>
+    
+    <script>
+        // Excel import butonuna tıklayınca dosya seçiciyi aç
+        document.getElementById('import-excel-btn').addEventListener('click', function() {
+            document.getElementById('excel-file-input').click();
+        });
+        
+        // Dosya seçildiğinde progress kısmını göster
+        document.getElementById('excel-file-input').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Progress kısmını göster
+                document.getElementById('import-progress').classList.remove('hidden');
+                
+                // Bu noktada add-passenger.js dosyanızdaki Excel işleme kodu devreye girecek
+                // Progress bar güncellemeleri orada yapılacak
+            }
+        });
+    </script>
 </body>
 </html>

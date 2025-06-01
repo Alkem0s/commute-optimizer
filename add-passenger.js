@@ -37,19 +37,28 @@ async function handleExcelImport() {
 
 async function processExcelFile(event) {
   const file = event.target.files[0];
-  if (!file) return;
 
-  const progressDiv = document.getElementById('import-progress');
-  const progressBar = document.getElementById('progress-bar');
-  const progressText = document.getElementById('progress-text');
-  const resultDiv = document.getElementById('result');
+  // Dosya yoksa veya geçersizse: çık
+  if (!file || !(file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+    alert("Lütfen geçerli bir Excel dosyası seçin (.xlsx veya .xls)");
+    event.target.value = '';
+    const progressDiv = document.getElementById('import-progress');
+    if (progressDiv) progressDiv.classList.add('hidden');
+    return;
+  }
+   const progressDiv = document.getElementById('import-progress');
+const progressBar = document.getElementById('progress-bar');
+const progressText = document.getElementById('progress-text');
+const resultDiv = document.getElementById('result');
+
+progressDiv.classList.remove('hidden');
+console.log("✅ Excel dosyası geçerli, progress gösteriliyor.");
+
+
 
   try {
-    // Show progress
-    progressDiv.classList.remove('hidden');
     progressBar.style.width = '0%';
-    
-    // Load xlsx library if needed
+
     if (!xlsxLib) {
       progressText.textContent = 'XLSX kütüphanesi yükleniyor...';
       xlsxLib = await import('https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs');
@@ -57,15 +66,15 @@ async function processExcelFile(event) {
 
     progressText.textContent = 'Excel dosyası okunuyor...';
 
-    // Read Excel file
     const data = await readExcelFile(file);
     const passengers = parseExcelData(data);
+
+    progressDiv.classList.remove('hidden'); // ✅ Artık güvenle gösterebiliriz
 
     if (passengers.length === 0) {
       throw new Error('Excel dosyasında geçerli yolcu verisi bulunamadı');
     }
 
-    // Process passengers
     let processed = 0;
     let successful = 0;
     let errors = [];
@@ -91,22 +100,18 @@ async function processExcelFile(event) {
       progressBar.style.width = `${progress}%`;
       progressText.textContent = `${processed} / ${passengers.length} yolcu işlendi`;
 
-      // Small delay to show progress
       await new Promise(resolve => setTimeout(resolve, 50));
     }
 
-    // Hide progress and show results
     progressDiv.classList.add('hidden');
-    
+
     if (resultDiv) {
       resultDiv.classList.remove('hidden');
       resultDiv.style.display = 'block';
-      
       let resultText = `<strong>İçe Aktarma Tamamlandı:</strong><br>`;
       resultText += `Toplam: ${passengers.length} yolcu<br>`;
       resultText += `Başarılı: ${successful} yolcu<br>`;
       resultText += `Başarısız: ${errors.length} yolcu<br><br>`;
-      
       if (errors.length > 0) {
         resultText += `<strong>Hatalar:</strong><br>`;
         resultText += errors.slice(0, 10).join('<br>');
@@ -114,14 +119,13 @@ async function processExcelFile(event) {
           resultText += `<br>... ve ${errors.length - 10} hata daha`;
         }
       }
-      
       resultDiv.innerHTML = resultText;
     }
 
   } catch (error) {
     console.error("Excel import error:", error);
     progressDiv.classList.add('hidden');
-    
+
     if (resultDiv) {
       resultDiv.classList.remove('hidden');
       resultDiv.style.display = 'block';
@@ -129,9 +133,9 @@ async function processExcelFile(event) {
     }
   }
 
-  // Reset file input
   event.target.value = '';
 }
+
 
 function readExcelFile(file) {
   return new Promise((resolve, reject) => {
