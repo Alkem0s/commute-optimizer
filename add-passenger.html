@@ -57,6 +57,12 @@
             transform: translateY(0); /* Press effect */
             box-shadow: none;
         }
+        .btn-green {
+            background-color: #059669;
+        }
+        .btn-green:hover {
+            background-color: #047857;
+        }
         #result {
             background-color: #e0f2fe; /* Light blue background */
             border: 1px solid #90cdf4; /* Blue border */
@@ -83,7 +89,33 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Add New Passenger</h1>
+        <div class="flex justify-between items-center mb-6">
+            <button id="import-excel-btn" class="btn-green hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Excel'den İçe Aktar
+            </button>
+            <h1 class="text-3xl font-bold text-gray-800">Add New Passenger</h1>
+            <div></div> <!-- Spacer for flex layout -->
+        </div>
+        
+        <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display: none;">
+        
+        <div id="import-progress" class="hidden mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span class="font-semibold text-blue-800">Excel dosyası işleniyor...</span>
+            </div>
+            <div class="w-full bg-blue-200 rounded-full h-2">
+                <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <div id="progress-text" class="text-sm text-blue-700 mt-2">0 / 0 yolcu işlendi</div>
+        </div>
 
         <form class="api-test-form space-y-6">
             <input type="hidden" id="api-method" value="setPassenger">
@@ -130,6 +162,7 @@
         <div id="result" class="hidden">
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script type="module" src="add-passenger.js"></script>
 </body>
 </html>
