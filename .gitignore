@@ -6,5 +6,6 @@ __pycache__/
 
 optimized_routes.png
 route_optimizer
+route_optimizer.exe
 route_optimizer.spec
 *.png
