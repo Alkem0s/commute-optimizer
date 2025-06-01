@@ -147,12 +147,23 @@
             color: #0369a1;
         }
         
-        #import-progress {
+        .import-progress {
             background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
             border: 2px solid #93c5fd;
             padding: 1.5rem;
             border-radius: 12px;
             margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.4s ease;
+            max-height: 0;
+            overflow: hidden;
+        }
+        
+        .import-progress.show {
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 200px;
         }
         
         .progress-content {
@@ -183,7 +194,7 @@
             height: 8px;
         }
         
-        #progress-bar {
+        .progress-bar {
             background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
             height: 8px;
             border-radius: 8px;
@@ -261,19 +272,10 @@
                     Excel'den İçe Aktar
                 </button>
             </div>
-            
-            <!-- Import Progress -->
-            <div id="import-progress" class="hidden" style="margin-top: 1.5rem;">
-                <div class="progress-content">
-                    <div class="spinner"></div>
-                    <span class="font-semibold text-blue-800">Excel dosyası işleniyor...</span>
-                </div>
-                <div class="progress-bar-container">
-                    <div id="progress-bar"></div>
-                </div>
-                <div id="progress-text" class="text-sm text-blue-700 mt-2">0 / 0 yolcu işlendi</div>
-            </div>
         </div>
+
+        <!-- Progress Bar Container (Initially hidden and will be added dynamically) -->
+        <div id="progress-container"></div>
 
         <!-- Main Content -->
         <div class="content-card">
@@ -343,22 +345,111 @@
     <script type="module" src="add-passenger.js"></script>
     
     <script>
-        // Excel import butonuna tıklayınca dosya seçiciyi aç
+        // Function to create and show progress bar
+        function showProgressBar() {
+            const progressContainer = document.getElementById('progress-container');
+            if (!progressContainer) {
+                console.error('Progress container not found');
+                return;
+            }
+            
+            // Create progress bar HTML
+            progressContainer.innerHTML = `
+                <div class="import-progress" id="import-progress">
+                    <div class="progress-content">
+                        <div class="spinner"></div>
+                        <span class="font-semibold text-blue-800">Excel dosyası işleniyor...</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    <div id="progress-text" class="text-sm text-blue-700 mt-2">0 / 0 yolcu işlendi</div>
+                </div>
+            `;
+            
+            // Trigger the animation
+            setTimeout(() => {
+                const progressElement = document.getElementById('import-progress');
+                if (progressElement) {
+                    progressElement.classList.add('show');
+                } else {
+                    console.error('Progress element not found after creation');
+                }
+            }, 100);
+        }
+        
+        // Function to hide progress bar
+        function hideProgressBar() {
+            const progressElement = document.getElementById('import-progress');
+            if (progressElement) {
+                progressElement.classList.remove('show');
+                // Remove the element after animation completes
+                setTimeout(() => {
+                    const progressContainer = document.getElementById('progress-container');
+                    progressContainer.innerHTML = '';
+                }, 400);
+            }
+        }
+        
+        // Function to update progress
+        function updateProgress(current, total) {
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            
+            if (progressBar && progressText) {
+                const percentage = total > 0 ? (current / total) * 100 : 0;
+                progressBar.style.width = percentage + '%';
+                progressText.textContent = `${current} / ${total} yolcu işlendi`;
+            } else {
+                console.warn('Progress elements not found:', { progressBar: !!progressBar, progressText: !!progressText });
+            }
+        }
+        
+        // Excel import button click handler
         document.getElementById('import-excel-btn').addEventListener('click', function() {
             document.getElementById('excel-file-input').click();
         });
         
-        // Dosya seçildiğinde progress kısmını göster
+        // File input change handler
         document.getElementById('excel-file-input').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
-                // Progress kısmını göster
-                document.getElementById('import-progress').classList.remove('hidden');
+                // Show progress bar with animation
+                showProgressBar();
                 
-                // Bu noktada add-passenger.js dosyanızdaki Excel işleme kodu devreye girecek
-                // Progress bar güncellemeleri orada yapılacak
+                // Simulate processing (replace this with your actual Excel processing logic)
+                simulateExcelProcessing();
             }
         });
+        
+        // Example function to simulate Excel processing
+        function simulateExcelProcessing() {
+            const totalRows = 100; // This would come from your Excel file
+            let currentRow = 0;
+            
+            const processInterval = setInterval(() => {
+                currentRow += Math.floor(Math.random() * 5) + 1; // Process 1-5 rows at a time
+                
+                if (currentRow >= totalRows) {
+                    currentRow = totalRows;
+                    updateProgress(currentRow, totalRows);
+                    
+                    // Hide progress bar after completion
+                    setTimeout(() => {
+                        hideProgressBar();
+                    }, 1000);
+                    
+                    clearInterval(processInterval);
+                } else {
+                    updateProgress(currentRow, totalRows);
+                }
+            }, 200);
+        }
+        
+        // Export functions for use in add-passenger.js
+        window.showProgressBar = showProgressBar;
+        window.hideProgressBar = hideProgressBar;
+        window.updateProgress = updateProgress;
     </script>
 </body>
 </html>

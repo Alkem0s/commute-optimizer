@@ -35,41 +35,144 @@ async function handleExcelImport() {
   fileInput.click();
 }
 
+// Create our own progress bar functions to ensure they work
+function createAndShowProgressBar() {
+  console.log("🎯 createAndShowProgressBar çağrıldı");
+  
+  const progressContainer = document.getElementById('progress-container');
+  if (!progressContainer) {
+    console.error('❌ Progress container bulunamadı');
+    return false;
+  }
+  
+  // Create progress bar HTML
+  progressContainer.innerHTML = `
+    <div class="import-progress show" id="import-progress">
+      <div class="progress-content">
+        <div class="spinner"></div>
+        <span class="font-semibold text-blue-800">Excel dosyası işleniyor...</span>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <div id="progress-text" class="text-sm text-blue-700 mt-2">0 / 0 yolcu işlendi</div>
+    </div>
+  `;
+  
+  console.log("✅ Progress bar HTML oluşturuldu");
+  return true;
+}
+
+function updateProgressBar(current, total) {
+  console.log(`📊 Progress güncelleniyor: ${current}/${total}`);
+  
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  
+  if (progressBar && progressText) {
+    const percentage = total > 0 ? (current / total) * 100 : 0;
+    progressBar.style.width = percentage + '%';
+    progressText.textContent = `${current} / ${total} yolcu işlendi`;
+    console.log(`✅ Progress güncellendi: ${percentage.toFixed(1)}%`);
+  } else {
+    console.warn('⚠️ Progress elementleri bulunamadı:', { 
+      progressBar: !!progressBar, 
+      progressText: !!progressText 
+    });
+  }
+}
+
+function hideProgressBar() {
+  console.log("🎯 hideProgressBar çağrıldı");
+  
+  const progressContainer = document.getElementById('progress-container');
+  if (progressContainer) {
+    progressContainer.innerHTML = '';
+    console.log("✅ Progress bar gizlendi");
+  } else {
+    console.warn("⚠️ Progress container bulunamadı");
+  }
+}
+
+function updateProgressText(text) {
+  console.log("📝 Progress text güncelleniyor:", text);
+  
+  const progressText = document.getElementById('progress-text');
+  if (progressText) {
+    const currentText = progressText.textContent;
+    const match = currentText.match(/(\d+) \/ (\d+) yolcu işlendi/);
+    if (match) {
+      progressText.innerHTML = `${text}<br><small>${currentText}</small>`;
+    } else {
+      progressText.textContent = text;
+    }
+    console.log("✅ Progress text güncellendi");
+  } else {
+    console.warn("⚠️ Progress text element bulunamadı");
+  }
+}
+
 async function processExcelFile(event) {
+  console.log("🚀 processExcelFile başladı");
+  
   const file = event.target.files[0];
 
-  // Dosya yoksa veya geçersizse: çık
-  if (!file || !(file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
-    alert("Lütfen geçerli bir Excel dosyası seçin (.xlsx veya .xls)");
-    event.target.value = '';
-    const progressDiv = document.getElementById('import-progress');
-    if (progressDiv) progressDiv.classList.add('hidden');
+  // First check if file exists
+  if (!file) {
+    console.log("❌ Dosya seçilmedi");
     return;
   }
-   const progressDiv = document.getElementById('import-progress');
-const progressBar = document.getElementById('progress-bar');
-const progressText = document.getElementById('progress-text');
-const resultDiv = document.getElementById('result');
 
-progressDiv.classList.remove('hidden');
-console.log("✅ Excel dosyası geçerli, progress gösteriliyor.");
+  console.log("📁 Dosya seçildi:", file.name, "Boyut:", file.size, "bytes");
 
+  // Show progress bar immediately
+  const progressShown = createAndShowProgressBar();
+  if (!progressShown) {
+    console.error("❌ Progress bar gösterilemedi");
+    return;
+  }
 
+  // Small delay to ensure DOM is ready
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  // Now validate file type
+  if (!(file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+    console.error("❌ Geçersiz dosya türü:", file.name);
+    alert("Lütfen geçerli bir Excel dosyası seçin (.xlsx veya .xls)");
+    event.target.value = '';
+    hideProgressBar();
+    return;
+  }
+
+  console.log("✅ Excel dosyası geçerli, işleme başlanıyor");
 
   try {
-    progressBar.style.width = '0%';
+    // Update initial progress
+    updateProgressBar(0, 1);
 
     if (!xlsxLib) {
-      progressText.textContent = 'XLSX kütüphanesi yükleniyor...';
-      xlsxLib = await import('https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs');
+      updateProgressText('XLSX kütüphanesi yükleniyor...');
+      console.log("📚 XLSX kütüphanesi yükleniyor...");
+      
+      // Try to load from the existing script tag first
+      if (typeof XLSX !== 'undefined') {
+        xlsxLib = XLSX;
+        console.log("✅ XLSX global olarak bulundu");
+      } else {
+        // Fallback to dynamic import
+        xlsxLib = await import('https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs');
+        console.log("✅ XLSX dinamik olarak yüklendi");
+      }
     }
 
-    progressText.textContent = 'Excel dosyası okunuyor...';
+    updateProgressText('Excel dosyası okunuyor...');
+    console.log("📖 Excel dosyası okunuyor...");
 
     const data = await readExcelFile(file);
-    const passengers = parseExcelData(data);
+    console.log("📋 Excel verisi okundu, satır sayısı:", data.length);
 
-    progressDiv.classList.remove('hidden'); // ✅ Artık güvenle gösterebiliriz
+    const passengers = parseExcelData(data);
+    console.log("👥 Parse edilen yolcu sayısı:", passengers.length);
 
     if (passengers.length === 0) {
       throw new Error('Excel dosyasında geçerli yolcu verisi bulunamadı');
@@ -78,6 +181,9 @@ console.log("✅ Excel dosyası geçerli, progress gösteriliyor.");
     let processed = 0;
     let successful = 0;
     let errors = [];
+
+    console.log("🚀 Yolcu kaydetme işlemi başlıyor...");
+    updateProgressText('Yolcular kaydediliyor...');
 
     for (const passenger of passengers) {
       try {
@@ -91,20 +197,29 @@ console.log("✅ Excel dosyası geçerli, progress gösteriliyor.");
           STOP_ADDRESS: passenger.STOP_ADDRESS || ''
         });
         successful++;
+        console.log(`✅ Yolcu kaydedildi: ${passenger.id}`);
       } catch (error) {
         errors.push(`${passenger.id}: ${error.message}`);
+        console.error(`❌ Yolcu kaydedilemedi: ${passenger.id}`, error);
       }
 
       processed++;
-      const progress = (processed / passengers.length) * 100;
-      progressBar.style.width = `${progress}%`;
-      progressText.textContent = `${processed} / ${passengers.length} yolcu işlendi`;
+      updateProgressBar(processed, passengers.length);
 
+      // Small delay to make progress visible
       await new Promise(resolve => setTimeout(resolve, 50));
     }
 
-    progressDiv.classList.add('hidden');
+    console.log("🏁 İşlem tamamlandı. Başarılı:", successful, "Hatalı:", errors.length);
 
+    // Keep progress bar visible for a moment before hiding
+    updateProgressText('İşlem tamamlandı!');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    hideProgressBar();
+
+    // Show results
+    const resultDiv = document.getElementById('result');
     if (resultDiv) {
       resultDiv.classList.remove('hidden');
       resultDiv.style.display = 'block';
@@ -123,9 +238,11 @@ console.log("✅ Excel dosyası geçerli, progress gösteriliyor.");
     }
 
   } catch (error) {
-    console.error("Excel import error:", error);
-    progressDiv.classList.add('hidden');
+    console.error("❌ Excel import error:", error);
+    
+    hideProgressBar();
 
+    const resultDiv = document.getElementById('result');
     if (resultDiv) {
       resultDiv.classList.remove('hidden');
       resultDiv.style.display = 'block';
@@ -135,7 +252,6 @@ console.log("✅ Excel dosyası geçerli, progress gösteriliyor.");
 
   event.target.value = '';
 }
-
 
 function readExcelFile(file) {
   return new Promise((resolve, reject) => {
@@ -148,10 +264,29 @@ function readExcelFile(file) {
     
     reader.onload = function(e) {
       try {
-        const workbook = xlsxLib.read(e.target.result, { type: 'binary' });
+        let workbook;
+        
+        // Handle both global XLSX and module import
+        if (typeof xlsxLib.read === 'function') {
+          workbook = xlsxLib.read(e.target.result, { type: 'binary' });
+        } else if (xlsxLib.default && typeof xlsxLib.default.read === 'function') {
+          workbook = xlsxLib.default.read(e.target.result, { type: 'binary' });
+        } else {
+          throw new Error('XLSX read function not found');
+        }
+        
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
-        const data = xlsxLib.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        let data;
+        if (typeof xlsxLib.utils === 'object') {
+          data = xlsxLib.utils.sheet_to_json(worksheet, { header: 1 });
+        } else if (xlsxLib.default && typeof xlsxLib.default.utils === 'object') {
+          data = xlsxLib.default.utils.sheet_to_json(worksheet, { header: 1 });
+        } else {
+          throw new Error('XLSX utils not found');
+        }
+        
         resolve(data);
       } catch (error) {
         reject(new Error('Excel dosyası okunamadı: ' + error.message));
@@ -165,6 +300,7 @@ function readExcelFile(file) {
     reader.readAsBinaryString(file);
   });
 }
+
 function parseExcelData(data) {
   if (data.length < 2) {
     throw new Error('Excel dosyası en az başlık satırı ve bir veri satırı içermelidir');
@@ -172,6 +308,8 @@ function parseExcelData(data) {
 
   const headers = data[0];
   const passengers = [];
+
+  console.log("📋 Excel başlıkları:", headers);
 
   // Find column indices based on mapping
   const columnIndices = {};
@@ -181,8 +319,11 @@ function parseExcelData(data) {
     );
     if (index !== -1) {
       columnIndices[dbCol] = index;
+      console.log(`📍 Kolon eşleşmesi: ${excelCol} -> ${dbCol} (index: ${index})`);
     }
   }
+
+  console.log("🗂️ Kolon indeksleri:", columnIndices);
 
   // Process data rows
   for (let i = 1; i < data.length; i++) {
@@ -264,15 +405,19 @@ function formatResult(result) {
 
 // Directly execute the setup logic when the script is parsed
 (async () => {
+  console.log("🚀 add-passenger.js yükleniyor...");
+  
   await ensureFirebaseInitialized();
+  console.log("🔥 Firebase başlatıldı");
   
   // Setup form handler
   const apiForm = document.querySelector('.api-test-form');
   if (apiForm) {
     currentFormHandler = handleSetPassenger;
     apiForm.addEventListener('submit', currentFormHandler);
+    console.log("📝 Form handler kuruldu");
   } else {
-    console.error("Form with class 'api-test-form' not found in add-passenger.html");
+    console.error("❌ Form with class 'api-test-form' not found in add-passenger.html");
   }
 
   // Setup Excel import functionality
@@ -281,9 +426,25 @@ function formatResult(result) {
   
   if (importBtn) {
     importBtn.addEventListener('click', handleExcelImport);
+    console.log("📊 Excel import button handler kuruldu");
+  } else {
+    console.error("❌ Import button not found");
   }
   
   if (fileInput) {
     fileInput.addEventListener('change', processExcelFile);
+    console.log("📁 File input handler kuruldu");
+  } else {
+    console.error("❌ File input not found");
   }
+
+  // Check if progress container exists
+  const progressContainer = document.getElementById('progress-container');
+  if (progressContainer) {
+    console.log("✅ Progress container bulundu");
+  } else {
+    console.error("❌ Progress container bulunamadı - HTML'de progress-container ID'li element var mı?");
+  }
+  
+  console.log("✅ add-passenger.js tamamen yüklendi");
 })();
