@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +6,7 @@
   <title>Optimal Route Calculator</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* FIXED HEADER STİLİ */
+    /* ... (Your existing CSS remains the same) ... */
     .header {
       background-color: white;
       color: black;
@@ -158,58 +157,6 @@
         font-size: 14px;
       }
     }
-
-    #welcome-page {
-  position: relative;
-  width: 100%;
-  height: calc(100vh - 60px); /* header yüksekliği kadar */
-  overflow: hidden;
-}
-
-.welcome-blur-background {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url('images/worldmap-colorful.jpg'); 
-  background-size: cover;
-  background-position: center;
-  filter: blur(6px) brightness(0.8);
-  z-index: 1;
-  animation: fadeIn 1.5s ease-in;
-}
-
-.welcome-overlay {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  color: white;
-  padding: 20vh 16px 0;
-  animation: slideIn 1s ease-out;
-  text-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-
-.welcome-title {
-  font-size: 2.5rem;
-  margin-bottom: 12px;
-}
-
-.welcome-subtitle {
-  font-size: 1.25rem;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-/* Animasyonlar */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
   </style>
 </head>
 <body>
@@ -217,144 +164,39 @@
     <img src="images/logo.png" alt="Logo" class="logo">
     
     <nav class="nav-menu">
-      <a href="#" class="nav-item" onclick="loadPage('add-passenger.html')" data-page="add-passenger">Add Passenger</a>
-      <a href="#" class="nav-item" onclick="loadPage('map.html')" data-page="map">Map</a>
-      <a href="#" class="nav-item" onclick="loadPage('api-test.html')" data-page="api-test">API Test</a>
-      <a href="#" class="nav-item" onclick="loadPage('passengers-list.html')" data-page="passengers-list">Passengers List</a>
-      <a href="#" class="nav-item" onclick="loadPage('statistics.html')" data-page="statistics">Statistics</a>
-      <a href="#" class="nav-item" onclick="loadPage('settings.html')" data-page="settings">Settings</a>
-      <a href="#" class="nav-item" onclick="loadPage('about.html')" data-page="about">About</a>
+      <a href="#" class="nav-item" onclick="appRouter.loadPage('add-passenger')" data-page="add-passenger">Add Passenger</a>
+      <a href="#" class="nav-item" onclick="appRouter.loadPage('map')" data-page="map">Map</a>
+      <a href="#" class="nav-item" onclick="appRouter.loadPage('api-test')" data-page="api-test">API Test</a>
+      <a href="#" class="nav-item" onclick="appRouter.loadPage('passengers-list')" data-page="passengers-list">Passengers List</a>
+      <a href="#" class="nav-item" onclick="appRouter.loadPage('statistics')" data-page="statistics">Statistics</a>
+      <a href="#" class="nav-item" onclick="appRouter.loadPage('settings')" data-page="settings">Settings</a>
+      <a href="#" class="nav-item" onclick="appRouter.loadPage('about')" data-page="about">About</a>
     </nav>
 
-    <button class="help-button" onclick="showPageHelp()" title="Page Help">?</button>
-  </div>
-  <div id="welcome-page" class="page active">
-  <div class="welcome-blur-background"></div>
-  <div class="welcome-overlay">
-    <h1 class="welcome-title">KanNav’a Hoş Geldiniz</h1>
-    <p class="welcome-subtitle">Yolculuklarınızı daha verimli planlamanız için buradayız.</p>
-  </div>
+    <button class="help-button" onclick="appRouter.showPageHelp()" title="Page Help">?</button>
   </div>
 
   <div id="main-content" class="screen"></div>
 
-  <script type="module">
-  // Import functions at the top level
-  import { initMap } from './app.js';
-  
-  // Expose initMap to global scope for Google Maps API
-  window.initMap = initMap;
+  <div id="loading-screen">
+    <img src="images/earth.gif" alt="Loading..." class="loading-earth">
+    <h2 class="loading-text">Loading...</h2>
+  </div>
 
-  let currentPage = '';
+  <script type="module" src="./app-router.js"></script>
 
-  async function loadPage(url) {
-      document.querySelectorAll(".screen").forEach(el => el.style.display = "none");
-
-          const welcomePage = document.getElementById("welcome-page");
-    if (welcomePage) {
-        welcomePage.style.display = "none";
-    }
-
-
-      // Clear main content first and remove any existing page-specific scripts
-      const container = document.getElementById("main-content");
-      container.innerHTML = '';
-      container.style.display = "block";
-      document.querySelectorAll('script[data-page-script]').forEach(script => script.remove());
-
-      // Update active nav item
-      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-      const pageId = url.replace('.html', '');
-      const activeItem = document.querySelector(`[data-page="${pageId}"]`);
-      if (activeItem) {
-          activeItem.classList.add('active');
-      }
-
-      // Store current page for help function
-      currentPage = pageId;
-
-      try {
-          const response = await fetch(url);
-          const html = await response.text();
-          container.innerHTML = html;
-
-            // Handle specific page initialization using match
-            switch (url) {
-              case "map.html":
-                loadGoogleMapsScript();
-                loadPageScript('map.js');
-                break;
-              case "api-test.html":
-                loadPageScript('api-test.js');
-                break;
-              case "add-passenger.html":
-                loadPageScript('add-passenger.js');
-                break;
-              case "passengers-list.html":
-                loadPageScript('passengers-list.js');
-                break;
-              default:
-                // Default case if needed
-                break;
-            }
-      } catch (err) {
-          console.error("Page load error:", err);
-          container.innerHTML = "<p>Error loading page. Please try again.</p>";
-      }
-  }
-
-  function loadPageScript(scriptName) {
-      // Remove any existing page-specific scripts to prevent duplicates
-      const script = document.createElement('script');
-      script.src = `./${scriptName}`;
-      script.type = 'module';
-      script.setAttribute('data-page-script', 'true');
-      document.body.appendChild(script);
-  }
-
-  function loadGoogleMapsScript() {
-      // Remove any existing Google Maps script to prevent duplicates
-      document.querySelectorAll('script[src*="maps.googleapis.com"]').forEach(script => script.remove());
-      
-      window.api.getApiKey().then((apiKey) => {
-          const script = document.createElement("script");
-          script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places&callback=initMap`;
-          script.async = true;
-          script.defer = true;
-          document.body.appendChild(script);
-      }).catch(err => {
-          console.error("Failed to load API key:", err);
-      });
-  }
-
-  function showPageHelp() {
-      const helpMessages = {
-          'add-passenger': 'Bu sayfada yeni yolcu ekleyebilirsiniz.',
-          'map': 'Harita görünümü ve rota planlaması.',
-          'api-test': 'API bağlantılarını test edebilirsiniz.',
-          'passengers-list': 'Tüm yolcuları görüntüleyebilirsiniz.',
-          'statistics': 'İstatistikleri görüntüleyebilirsiniz.',
-          'settings': 'Uygulama ayarlarını düzenleyebilirsiniz.',
-          'about': 'Uygulama hakkında bilgi alabilirsiniz.'
-      };
-
-      const message = helpMessages[currentPage] || 'Bu sayfa hakkında yardım bilgisi bulunmuyor.';
-      alert(message); // Geçici olarak alert kullanıyoruz, sonra modal yapabilirsiniz
-  }
-
-  window.addEventListener("load", () => {
-    setTimeout(() => {
-      const loadingScreen = document.getElementById("loading-screen");
-      if (loadingScreen) {
-        loadingScreen.style.display = "none";
-      }
-    }, 2500);
-  });
-
-  // Expose functions to global scope
-  window.loadPage = loadPage;
-  window.showPageHelp = showPageHelp;
-</script>
+  <script>
+    // Initial page load, hide loading screen
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        const loadingScreen = document.getElementById("loading-screen");
+        if (loadingScreen) {
+          loadingScreen.style.display = "none";
+        }
+        // Optionally load a default page here, e.g., appRouter.loadPage('map');
+        // If not, 'map' will be loaded by app-router.js's initial call
+      }, 2500);
+    });
+  </script>
 </body>
 </html>
-
