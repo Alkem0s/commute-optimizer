@@ -18,12 +18,106 @@ import {
 import { optimizeRoute } from './optimizer.js'; 
 import { getAllVehicles } from './api.js';
 
+// DOM element references and their handlers for cleanup
+let calculateRouteButton = null;
+let toggleSpecialMarkerButton = null;
+let runPythonOptimizerButton = null;
+let mapClickListener = null;
+let isAppInitialized = false;
+
+// Bound function references for cleanup
+let handleCalculateRoute = null;
+let handleToggleSpecialMarker = null;
+let handleRunPythonOptimizer = null;
+let handleMapClick = null;
+
+/**
+ * Public API: Initialize the entire application
+ * This should be called when the page loads or when the app component is mounted
+ * @public
+ */
+export async function initApp() {
+    console.log("🚀 initApp called...");
+    
+    if (isAppInitialized) {
+        console.warn("App already initialized, skipping...");
+        return;
+    }
+
+    try {
+        // Initialize the map first
+        await initMap();
+        
+        // Initialize markers after map is ready
+        await initMarkers();
+        
+        isAppInitialized = true;
+        console.log("✅ initApp initialization complete");
+    } catch (error) {
+        console.error("❌ Error during app initialization:", error);
+        throw error;
+    }
+}
+
+/**
+ * Public API: Cleanup the entire application
+ * This should be called when navigating away from the page or unmounting the app component
+ * @public
+ */
+export function cleanupApp() {
+    console.log("🧹 cleanupApp called...");
+
+    // Remove event listeners
+    if (calculateRouteButton && handleCalculateRoute) {
+        calculateRouteButton.removeEventListener('click', handleCalculateRoute);
+        calculateRouteButton = null;
+        handleCalculateRoute = null;
+    }
+
+    if (toggleSpecialMarkerButton && handleToggleSpecialMarker) {
+        toggleSpecialMarkerButton.removeEventListener('click', handleToggleSpecialMarker);
+        toggleSpecialMarkerButton = null;
+        handleToggleSpecialMarker = null;
+    }
+
+    if (runPythonOptimizerButton && handleRunPythonOptimizer) {
+        runPythonOptimizerButton.removeEventListener('click', handleRunPythonOptimizer);
+        runPythonOptimizerButton = null;
+        handleRunPythonOptimizer = null;
+    }
+
+    // Remove map click listener
+    if (mapClickListener && getMap()) {
+        google.maps.event.removeListener(mapClickListener);
+        mapClickListener = null;
+    }
+
+    // Clear all markers from the map
+    clearAllMarkers();
+
+    // Clear global window references
+    if (window.removeMapMarker) {
+        delete window.removeMapMarker;
+    }
+    if (window.getSpecialMarkers) {
+        delete window.getSpecialMarkers;
+    }
+    if (window.getRouteMarkers) {
+        delete window.getRouteMarkers;
+    }
+
+    // Reset initialization flag
+    isAppInitialized = false;
+
+    console.log("✅ cleanupApp complete");
+}
+
 /**
  * Initializes the Google Map and sets up event listeners.
  * This is the primary entry point for setting up the map.
- * @public
+ * @private
  */
-export function initMap() {
+async function initMap() {
     console.log("initMap called: Google Maps API is ready."); // Add a console log to confirm
     setGeocoder(new google.maps.Geocoder());
     setInfoWindow(new google.maps.InfoWindow());
@@ -46,8 +140,8 @@ export function initMap() {
         });
     }
 
-    // Map click listener now conditionally adds markers based on specialMarkerMode
-    getMap().addListener('click', (e) => {
+    // Store bound function reference for cleanup
+    handleMapClick = (e) => {
         if (getSpecialMarkerMode()) {
             // If special marker mode is active, add a special marker
             addSpecialMarkerToMap(e.latLng);
@@ -60,37 +154,47 @@ export function initMap() {
                 displayMessage('Please select a route from the "Available Routes" list to add markers to, or toggle to "Passenger Mode" to add passenger addresses.');
             }
         }
-    });
+    };
 
+    // Map click listener now conditionally adds markers based on specialMarkerMode
+    mapClickListener = getMap().addListener('click', handleMapClick);
 
-    document.getElementById('calculate-route').addEventListener('click', async () => {
-        const selectedRouteIndex = getSelectedRouteIndex();
-        const routeMarkers = getRouteMarkers();
+    // Get DOM elements and attach event listeners
+    calculateRouteButton = document.getElementById('calculate-route');
+    if (calculateRouteButton) {
+        handleCalculateRoute = async () => {
+            const selectedRouteIndex = getSelectedRouteIndex();
+            const routeMarkers = getRouteMarkers();
 
-        if (selectedRouteIndex === -1) {
-            displayMessage('Please select a route to calculate!');
-            return;
-        }
+            if (selectedRouteIndex === -1) {
+                displayMessage('Please select a route to calculate!');
+                return;
+            }
 
-        // Calculate a database route
-        if (!routeMarkers[selectedRouteIndex] || routeMarkers[selectedRouteIndex].length < 2) {
-            displayMessage('Please add at least two markers to the selected route!');
-            return;
-        }
-        await calculateRouteForIndex(selectedRouteIndex);
+            // Calculate a database route
+            if (!routeMarkers[selectedRouteIndex] || routeMarkers[selectedRouteIndex].length < 2) {
+                displayMessage('Please add at least two markers to the selected route!');
+                return;
+            }
+            await calculateRouteForIndex(selectedRouteIndex);
 
-        // After calculating the DB route, re-evaluate all special marker routes
-        await updateAllSpecialMarkerRoutes();
-        await updatePlacesListForRoute(); // Update the marker lists in the info panels
-    });
+            // After calculating the DB route, re-evaluate all special marker routes
+            await updateAllSpecialMarkerRoutes();
+            await updatePlacesListForRoute(); // Update the marker lists in the info panels
+        };
+        calculateRouteButton.addEventListener('click', handleCalculateRoute);
+    }
 
     // The button to toggle special marker mode
-    document.getElementById('toggleSpecialMarker').addEventListener('click', toggleSpecialMarkerPlacementMode);
+    toggleSpecialMarkerButton = document.getElementById('toggleSpecialMarker');
+    if (toggleSpecialMarkerButton) {
+        handleToggleSpecialMarker = toggleSpecialMarkerPlacementMode;
+        toggleSpecialMarkerButton.addEventListener('click', handleToggleSpecialMarker);
+    }
 
-    const runPythonOptimizerButton = document.getElementById('runPythonOptimizer');
-
+    runPythonOptimizerButton = document.getElementById('runPythonOptimizer');
     if (runPythonOptimizerButton) {
-        runPythonOptimizerButton.addEventListener('click', async () => {
+        handleRunPythonOptimizer = async () => {
             document.getElementById('result').innerText = "Optimizer is running...";
             try {
                 let locationMarkers = getSpecialMarkers();
@@ -117,18 +221,22 @@ export function initMap() {
                 console.error('Error during optimization:', error);
                 document.getElementById('result').innerText = `Error: ${error.message}`;
             }
-        });
+        };
+        runPythonOptimizerButton.addEventListener('click', handleRunPythonOptimizer);
     }
 
-    initMarkers();
+    // Expose necessary functions globally for HTML event handlers if needed
+    window.removeMapMarker = removeMapMarker;
+    window.getSpecialMarkers = getSpecialMarkers;
+    window.getRouteMarkers = getRouteMarkers;
 }
 
 /**
  * Initializes markers from a database or a fallback set.
  * This is called after the map is initialized to populate it with routes.
- * @public
+ * @private
  */
-export async function initMarkers() {
+async function initMarkers() {
     console.log("initMarkers called."); // Add a console log to confirm
     await initializeFirebase();
     let routes = await getDatabaseMarkers();
@@ -136,6 +244,35 @@ export async function initMarkers() {
 
     // After all initial routes and markers are drawn and processed, update all special marker routes
     await updateAllSpecialMarkerRoutes();
+}
+
+/**
+ * Clear all markers from the map and reset state
+ * @private
+ */
+function clearAllMarkers() {
+    // Clear special markers
+    clearSpecialMarkers();
+
+    // Clear route markers
+    const routeMarkers = getRouteMarkers();
+    routeMarkers.forEach(routeMarkerArray => {
+        if (routeMarkerArray) {
+            routeMarkerArray.forEach(marker => {
+                if (marker && marker.setMap) {
+                    marker.setMap(null);
+                }
+            });
+        }
+    });
+
+    // Clear route polylines if they exist in the state
+    const specialRoutePolylines = getSpecialRoutePolylines();
+    specialRoutePolylines.forEach(polyline => {
+        if (polyline && polyline.setMap) {
+            polyline.setMap(null);
+        }
+    });
 }
 
 /**
@@ -453,7 +590,6 @@ export async function getDistanceBetweenCoordinates(lat1, lng1, lat2, lng2, trav
     return calculateRouteDistanceCoords(lat1, lng1, lat2, lng2, travelMode);
 }
 
-
 /**
  * Public API: Calculates and displays a route between an array of Google Maps Marker objects.
  * This function also updates the UI to show route information.
@@ -567,12 +703,3 @@ async function drawInitialRoutes(routes) {
     // After all initial routes and markers are drawn and processed, update the places list
     await updatePlacesListForRoute();
 }
-
-
-// Expose necessary functions globally for HTML event handlers if needed,
-// or ensure your HTML interacts with these functions via proper module imports/event listeners.
-// This is typically for cases where onclick/etc. are used directly in HTML.
-// For a module-based approach, it's better to attach listeners in JS directly.
-window.removeMapMarker = removeMapMarker;
-window.getSpecialMarkers = getSpecialMarkers;
-window.getRouteMarkers = getRouteMarkers; // Expose for removeMapMarker to access

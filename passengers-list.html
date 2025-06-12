@@ -110,6 +110,22 @@
             <h1 class="text-3xl font-bold text-gray-800">Passenger List</h1>
         </header>
 
+        <div class="mb-6">
+            <div class="relative max-w-md">
+                <input 
+                    id="filterInput"
+                    type="text" 
+                    placeholder="Search passengers..." 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
         <div class="mb-6 flex flex-col lg:flex-row justify-between items-center gap-4">
             <div class="flex flex-wrap gap-3">
                 <button id="sortByNameBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75 transition duration-150 ease-in-out">
@@ -128,8 +144,7 @@
             
             <div class="flex items-center gap-4">
                 <div class="flex items-center gap-2">
-                    <button id="cardViewBtn" class="view-toggle active">Card View</button>
-                    <button id="tableViewBtn" class="view-toggle">Table View</button>
+                    <button id="tableViewBtn" class="view-toggle active">Table View</button>
                 </div>
                 <div id="selectionCounter" class="selection-counter hidden">
                     0 selected
@@ -137,9 +152,7 @@
                 <button id="sendToMapBtn" class="px-6 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-75 transition duration-150 ease-in-out disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
                     Send to Map
                 </button>
-                <!-- Add this button in the button group -->
                 <div class="flex flex-wrap gap-3">
-                    <!-- ... existing buttons ... -->
                     <button id="exportExcelBtn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-150 ease-in-out">
                         Export to Excel
                     </button>
@@ -160,12 +173,7 @@
             No passengers found in the database.
         </div>
 
-        <!-- Card View Container -->
-        <div id="passengers-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        </div>
-
-        <!-- Table View Container -->
-        <div id="passengers-table-container" class="hidden">
+        <div id="passengers-table-container">
             <div class="table-container">
                 <table id="passengers-table" class="excel-table">
                     <thead>

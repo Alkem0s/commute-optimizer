@@ -2,8 +2,14 @@ import { initializeFirebase } from './firebase.js';
 import * as api from './api.js';
 
 let isFirebaseInitialized = false;
-let currentFormHandler = null;
+let currentFormHandler = null; // This will now be set in initAddPassenger
 let xlsxLib = null; // Cache for the xlsx library
+
+// References to DOM elements and their handlers to allow cleanup
+let apiFormElement = null;
+let importButtonElement = null;
+let fileInputElement = null;
+let processFileHandler = null; // To store the bound handler for file input
 
 // Excel column mapping
 const EXCEL_COLUMN_MAPPING = {
@@ -31,8 +37,9 @@ async function ensureFirebaseInitialized() {
 }
 
 async function handleExcelImport() {
-  const fileInput = document.getElementById('excel-file-input');
-  fileInput.click();
+  if (fileInputElement) {
+    fileInputElement.click();
+  }
 }
 
 // Create our own progress bar functions to ensure they work
@@ -250,7 +257,10 @@ async function processExcelFile(event) {
     }
   }
 
-  event.target.value = '';
+  // Clear the file input value to allow re-selection of the same file
+  if (event && event.target) {
+    event.target.value = '';
+  }
 }
 
 function readExcelFile(file) {
@@ -403,36 +413,37 @@ function formatResult(result) {
   return result.toString();
 }
 
-// Directly execute the setup logic when the script is parsed
-(async () => {
-  console.log("🚀 add-passenger.js yükleniyor...");
+export async function initAddPassenger() {
+  console.log("🚀 initAddPassenger called...");
   
   await ensureFirebaseInitialized();
   console.log("🔥 Firebase başlatıldı");
   
   // Setup form handler
-  const apiForm = document.querySelector('.api-test-form');
-  if (apiForm) {
-    currentFormHandler = handleSetPassenger;
-    apiForm.addEventListener('submit', currentFormHandler);
+  apiFormElement = document.querySelector('.api-test-form');
+  if (apiFormElement) {
+    currentFormHandler = handleSetPassenger; // Assign the handler
+    apiFormElement.addEventListener('submit', currentFormHandler);
     console.log("📝 Form handler kuruldu");
   } else {
     console.error("❌ Form with class 'api-test-form' not found in add-passenger.html");
   }
 
   // Setup Excel import functionality
-  const importBtn = document.getElementById('import-excel-btn');
-  const fileInput = document.getElementById('excel-file-input');
+  importButtonElement = document.getElementById('import-excel-btn');
+  fileInputElement = document.getElementById('excel-file-input');
   
-  if (importBtn) {
-    importBtn.addEventListener('click', handleExcelImport);
+  if (importButtonElement) {
+    importButtonElement.addEventListener('click', handleExcelImport);
     console.log("📊 Excel import button handler kuruldu");
   } else {
     console.error("❌ Import button not found");
   }
   
-  if (fileInput) {
-    fileInput.addEventListener('change', processExcelFile);
+  if (fileInputElement) {
+    // Store a reference to the bound handler to remove it later
+    processFileHandler = processExcelFile;
+    fileInputElement.addEventListener('change', processFileHandler);
     console.log("📁 File input handler kuruldu");
   } else {
     console.error("❌ File input not found");
@@ -446,5 +457,30 @@ function formatResult(result) {
     console.error("❌ Progress container bulunamadı - HTML'de progress-container ID'li element var mı?");
   }
   
-  console.log("✅ add-passenger.js tamamen yüklendi");
-})();
+  console.log("✅ add-passenger.js initialization complete");
+}
+
+export function cleanupAddPassenger() {
+  console.log("🧹 cleanupAddPassenger called...");
+  if (apiFormElement && currentFormHandler) {
+    apiFormElement.removeEventListener('submit', currentFormHandler);
+    apiFormElement = null;
+    currentFormHandler = null;
+    console.log("📝 Form handler kaldırıldı");
+  }
+  if (importButtonElement) {
+    importButtonElement.removeEventListener('click', handleExcelImport);
+    importButtonElement = null;
+    console.log("📊 Excel import button handler kaldırıldı");
+  }
+  if (fileInputElement && processFileHandler) {
+    fileInputElement.removeEventListener('change', processFileHandler);
+    fileInputElement = null;
+    processFileHandler = null;
+    console.log("📁 File input handler kaldırıldı");
+  }
+  // Reset any other global state or clear timeouts/intervals if they exist
+  xlsxLib = null; // Clear cached library to allow re-import if needed (though usually not necessary)
+  isFirebaseInitialized = false; // Reset Firebase flag if it's truly uninitialized on page switch
+  console.log("✅ add-passenger.js cleanup complete");
+}
