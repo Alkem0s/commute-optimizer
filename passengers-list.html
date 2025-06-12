@@ -9,16 +9,25 @@
         /* Custom styles from add-passenger.html for a consistent look */
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
+            background: linear-gradient(to bottom, #414345, #232526);
+            background-attachment: fixed;
+            height: 100%;
+            /* Remove padding from body to prevent extra scroll space */
+            margin: 0; /* Ensure no default margin */
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
         }
 
         .main-container {
             max-width: 1200px; /* Increased max-width for a wider table view */
             margin: 0 auto;
-            padding-top: 20px;
+            padding: 20px; /* Add padding here instead of body */
+            box-sizing: border-box; /* Ensure padding is included in width */
+            min-height: 100vh; /* Ensure container fills viewport height */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Align content to the top */
+            align-items: center; /* Center content horizontally */
         }
 
         .page-header {
@@ -29,6 +38,8 @@
             margin-bottom: 2rem;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             text-align: center;
+            width: 100%; /* Ensure header takes full width of its container */
+            max-width: 1200px; /* Constrain max-width to match main-container */
         }
 
         .content-card {
@@ -38,12 +49,14 @@
             padding: 2.5rem;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%; /* Ensure content card takes full width of its container */
+            max-width: 1200px; /* Constrain max-width to match main-container */
         }
 
         .page-title {
             font-size: 2.5rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            background:linear-gradient(to bottom, #414345, #232526);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -68,52 +81,30 @@
             border: none;
             font-size: 0.95rem;
         }
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
-        }
-        .btn-primary:hover {
-            box-shadow: 0 12px 24px rgba(99, 102, 241, 0.4);
-        }
-        .btn-secondary {
-             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-             box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
-        }
-        .btn-secondary:hover {
-            box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
-        }
-         .btn-danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);
-        }
-        .btn-danger:hover {
-             box-shadow: 0 12px 24px rgba(239, 68, 68, 0.4);
-        }
-        .btn-warning {
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-            box-shadow: 0 8px 16px rgba(249, 115, 22, 0.3);
-        }
-         .btn-warning:hover {
-             box-shadow: 0 12px 24px rgba(249, 115, 22, 0.4);
-        }
-        .btn-info {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
-        }
-        .btn-info:hover {
-            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.4);
-        }
-        .btn-light {
-            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
-            color: #374151;
-            box-shadow: 0 8px 16px rgba(209, 213, 219, 0.4);
-        }
-         .btn-light:hover {
-            box-shadow: 0 12px 24px rgba(209, 213, 219, 0.5);
-        }
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-warning,
+.btn-info,
+.btn-light {
+    background: #ffdb00;
+    box-shadow: 0 8px 16px rgba(255, 219, 0, 0.4);
+    color: #374151;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-danger:hover,
+.btn-warning:hover,
+.btn-info:hover,
+.btn-light:hover {
+    background: #d4b800; /* a darker mustard yellow */
+    box-shadow: 0 12px 24px rgba(212, 184, 0, 0.6);
+    color: #374151;
+}
+
+
 
         /* Search Input */
         .search-input {
@@ -176,6 +167,7 @@
             overflow-y: auto;
             border-radius: 12px;
             border: 1px solid #e5e7eb;
+            width: 100%; /* Ensure table container takes full width */
         }
 
         /* Loading and Messages */

@@ -9,16 +9,25 @@
         /* Custom styles for Inter font and general body styling */
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
+            background: linear-gradient(to bottom, #414345, #232526);
+            height: 100%;
+            background-attachment: fixed;
+            /* Remove padding from body to prevent extra scroll space */
+            margin: 0; /* Ensure no default margin */
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
         }
         
         .main-container {
             max-width: 1000px;
             margin: 0 auto;
-            padding-top: 20px;
+            padding: 20px; /* Add padding here instead of body */
+            box-sizing: border-box; /* Ensure padding is included in width */
+            min-height: 100vh; /* Ensure container fills viewport height */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Align content to the top */
+            align-items: center; /* Center content horizontally */
         }
         
         .page-header {
@@ -29,6 +38,8 @@
             margin-bottom: 2rem;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             text-align: center;
+            width: 100%; /* Ensure header takes full width of its container */
+            max-width: 1000px; /* Constrain max-width to match main-container */
         }
         
         .content-card {
@@ -38,6 +49,8 @@
             padding: 2.5rem;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%; /* Ensure content card takes full width of its container */
+            max-width: 1000px; /* Constrain max-width to match main-container */
         }
         
         .form-grid {
@@ -88,64 +101,51 @@
             margin-top: 2rem;
         }
         
-        .btn-primary {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            color: white;
-            padding: 0.875rem 2rem;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
-            border: none;
-            font-size: 1rem;
-            min-width: 160px;
-        }
+.btn-primary,
+.btn-secondary {
+    background-color: #ffdb00;
+    color: #374151;
+    padding: 0.875rem 2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border: none;
+    font-size: 1rem;
+    min-width: 160px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.btn-primary:hover,
+.btn-secondary:hover {
+    background-color: #e6c600; /* Slightly darker yellow for hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:active,
+.btn-secondary:active {
+    transform: translateY(0);
+}
         
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(99, 102, 241, 0.4);
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            padding: 0.875rem 2rem;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
-            border: none;
-            font-size: 1rem;
-            min-width: 160px;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            justify-content: center;
-        }
-        
-        .btn-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
-        }
-        
-        .btn-primary:active, .btn-secondary:active {
-            transform: translateY(0);
-        }
-        
-        #result {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border: 2px solid #bae6fd;
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-top: 2rem;
-            white-space: pre-wrap;
-            word-break: break-all;
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-            font-size: 0.9rem;
-            color: #0369a1;
-        }
+#result {
+    background-color: #ffdb00;
+    border: 2px solid #e6c600; /* Optional: matching yellow tone border */
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 2rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 0.9rem;
+    color: #000000;
+    opacity: 50%;
+}
+
         
         .import-progress {
             background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
@@ -205,7 +205,7 @@
         .page-title {
             font-size: 2.5rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            background: linear-gradient(to bottom, #414345, #232526);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -221,7 +221,7 @@
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .main-container {
-                padding-top: 10px;
+                padding: 10px; /* Reduce padding for smaller screens */
             }
             
             .page-header, .content-card {
