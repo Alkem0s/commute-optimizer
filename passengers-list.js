@@ -334,7 +334,7 @@ async function sendSelectedPassengersToMap() {
     const passengerData = JSON.stringify(selectedPassengerData);
     localStorage.setItem('pendingPassengers', passengerData);
     
-    if (confirm(`Selected ${selectedPassengerData.length} passengers. Would you like to go to the map page to add them?`)) {
+    if (confirm(`Seçili ${selectedPassengerData.length} yolcu var. Bunları eklemek için harita sayfasına gitmek ister misiniz?`)) {
       // Use the global loadPage function defined in index.html
       if (window.appRouter) {
         window.appRouter.loadPage('map');

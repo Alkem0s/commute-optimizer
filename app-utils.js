@@ -20,6 +20,73 @@ const test_markers = [
     { lat: 38.46847571099811, lng: 27.164541723494402 }
 ];
 
+// --- Geocoding Cache ---
+// A Map to store geocoded results. Keys will be "lat, lng" for reverse geocoding
+// or the address string for forward geocoding. Values will be the formatted address
+// or the geocoding result object.
+export const geocodeCache = new Map();
+
+/**
+ * Helper function to generate a unique key for caching based on LatLng.
+ * @param {google.maps.LatLng} latLng - The LatLng object.
+ * @returns {string} - A string key "lat,lng".
+ */
+function getLatLngCacheKey(latLng) {
+    return `${latLng.lat().toFixed(6)},${latLng.lng().toFixed(6)}`;
+}
+
+/**
+ * Updates the cached address for a given marker's position.
+ * This is called when a marker is created or dragged to ensure its address is fresh in the cache.
+ * @param {google.maps.LatLng} location - The geographic coordinates of the marker.
+ * @param {google.maps.Marker} marker - The marker object to update (optional, for storing on marker itself).
+ * @returns {Promise<string>} - A promise that resolves with the formatted address.
+ */
+export async function updateMarkerAddressCache(location, marker = null) {
+    const geocoder = getGeocoder();
+    const cacheKey = getLatLngCacheKey(location);
+
+    return new Promise((resolve) => {
+        geocoder.geocode({ location }, (results, status) => {
+            const address = status === 'OK' && results[0]
+                ? results[0].formatted_address
+                : 'Address not found';
+            
+            // Store in cache
+            geocodeCache.set(cacheKey, address);
+
+            // Also store directly on the marker object for quick access in info window
+            if (marker) {
+                marker.cachedAddress = address;
+            }
+            resolve(address);
+        });
+    });
+}
+
+
+// --- Debouncing Utility ---
+let debounceTimer;
+
+/**
+ * Debounces a function, ensuring it's only called after a specified delay
+ * since the last time it was invoked.
+ * @param {Function} func - The function to debounce.
+ * @param {number} delay - The debounce delay in milliseconds.
+ * @returns {Function} - The debounced function.
+ */
+function debounce(func, delay) {
+    return function(...args) {
+        const context = this;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => func.apply(context, args), delay);
+    };
+}
+
+// Create a debounced version of updatePlacesListForRoute
+export const debouncedUpdatePlacesListForRoute = debounce(updatePlacesListForRoute, 300);
+
+
 /**
  * Helper function to remove a marker from a specific route.
  * @param {google.maps.Marker} marker - The marker object to remove.
@@ -76,8 +143,8 @@ export function removeMarker(marker, routeIdx) {
 
     // Update routes list
     updateRoutesList();
-    // Update places list for the affected route
-    updatePlacesListForRoute();
+    // Use debounced update for places list after marker removal
+    debouncedUpdatePlacesListForRoute(); 
 
     return true;
 }
@@ -95,39 +162,45 @@ export function updateMarkerLabels(markersArray) {
 
 /**
  * Generates HTML content for a marker, including its address.
+ * Prioritizes cached address if available.
  * @param {google.maps.LatLng} location - The geographic coordinates of the marker.
  * @param {number} index - The index of the marker in its respective array.
  * @param {boolean} [isSpecialMarker=false] - True if this is a special marker.
  * @param {number} [routeIdx=-1] - The index of the route (0+ for DB routes).
+ * @param {google.maps.Marker} [marker=null] - The actual marker object (optional, for accessing cachedAddress).
  * @returns {Promise<string>} - A promise that resolves with the HTML string for the marker's info.
  * @private
  */
-export async function getMarkerInfoHtml(location, index, isSpecialMarker = false, routeIdx = -1) {
-    const geocoder = getGeocoder();
-    return new Promise((resolve) => {
-        geocoder.geocode({ location }, (results, status) => {
-            const address = status === 'OK' && results[0]
-                ? results[0].formatted_address
-                : 'Address not found';
+export async function getMarkerInfoHtml(location, index, isSpecialMarker = false, routeIdx = -1, marker = null) {
+    let address = 'Address not found';
+    const cacheKey = getLatLngCacheKey(location);
 
-            let markerLabel;
-            if (isSpecialMarker) {
-                markerLabel = `Special Marker ${index + 1}`; // Label as "Special Marker 1", "Special Marker 2", etc.
-            } else { // It's a DB route marker
-                markerLabel = `Marker ${index + 1}`;
-            }
+    // Try to get from marker's cached address first
+    if (marker && marker.cachedAddress) {
+        address = marker.cachedAddress;
+    } else if (geocodeCache.has(cacheKey)) { // Then try global cache
+        address = geocodeCache.get(cacheKey);
+    } else {
+        // If not in cache, perform geocoding and update cache
+        address = await updateMarkerAddressCache(location, marker);
+    }
 
-            const htmlContent = `
-                <div class="marker-item">
-                    <strong>${markerLabel}</strong><br>
-                    Lat: ${location.lat().toFixed(6)}<br>
-                    Lng: ${location.lng().toFixed(6)}<br>
-                    Address: ${address}
-                </div>
-            `;
-            resolve(htmlContent);
-        });
-    });
+    let markerLabel;
+    if (isSpecialMarker) {
+        markerLabel = `Special Marker ${index + 1}`; // Label as "Special Marker 1", "Special Marker 2", etc.
+    } else { // It's a DB route marker
+        markerLabel = `Marker ${index + 1}`;
+    }
+
+    const htmlContent = `
+        <div class="marker-item">
+            <strong>${markerLabel}</strong><br>
+            Lat: ${location.lat().toFixed(6)}<br>
+            Lng: ${location.lng().toFixed(6)}<br>
+            Address: ${address}
+        </div>
+    `;
+    return htmlContent;
 }
 
 
@@ -153,15 +226,23 @@ export async function updatePlacesListForRoute() {
         const resultContainer = document.getElementById('result');
         resultContainer.parentNode.insertBefore(specialMarkersPanel, resultContainer);
     }
+    // Always clear the special markers list when updating
     const specialMarkersList = document.getElementById('special-markers-list');
-    specialMarkersList.innerHTML = ''; // Clear previous special markers
+    if (specialMarkersList) specialMarkersList.innerHTML = '';
+
 
     // Update special marker info if it exists
     if (specialMarkers.length > 0) {
         specialMarkersPanel.style.display = 'block'; // Ensure panel is visible
-        for (let i = 0; i < specialMarkers.length; i++) {
-            const specialMarker = specialMarkers[i];
-            const html = await getMarkerInfoHtml(specialMarker.getPosition(), i, true);
+
+        // Use Promise.all to parallelize getMarkerInfoHtml calls for special markers
+        const specialMarkerHtmlPromises = specialMarkers.map((specialMarker, i) =>
+            getMarkerInfoHtml(specialMarker.getPosition(), i, true, -1, specialMarker) // Pass marker object
+        );
+        const specialMarkerHtmlContents = await Promise.all(specialMarkerHtmlPromises);
+
+        specialMarkerHtmlContents.forEach((html, i) => {
+            const specialMarker = specialMarkers[i]; // Get the original marker for click listener
             const markerDiv = document.createElement('div');
             markerDiv.innerHTML = html;
 
@@ -169,11 +250,11 @@ export async function updatePlacesListForRoute() {
             removeButton.className = 'marker-remove-btn';
             removeButton.textContent = 'Remove Passenger';
             removeButton.onclick = () => {
-                window.removeMapMarker(specialMarker, -1, i); 
+                window.removeMapMarker(specialMarker, -1, i);
             };
             markerDiv.querySelector('.marker-item').appendChild(removeButton); // Append button to marker item
             specialMarkersList.appendChild(markerDiv);
-        }
+        });
     } else {
         specialMarkersPanel.style.display = 'none'; // Hide panel if no special markers
     }
@@ -190,9 +271,16 @@ export async function updatePlacesListForRoute() {
             }
             if (routeMarkers[routeIdx] && routeMarkers[routeIdx].length > 0) {
                 dbRouteMarkerList.innerHTML = '<h4>Markers:</h4>'; // Add a header for markers
-                for (let i = 0; i < routeMarkers[routeIdx].length; i++) {
-                    dbRouteMarkerList.innerHTML += await getMarkerInfoHtml(routeMarkers[routeIdx][i].getPosition(), i, false, routeIdx);
-                }
+
+                // Use Promise.all to parallelize getMarkerInfoHtml calls for DB route markers
+                const dbRouteMarkerHtmlPromises = routeMarkers[routeIdx].map((marker, i) =>
+                    getMarkerInfoHtml(marker.getPosition(), i, false, routeIdx, marker) // Pass marker object
+                );
+                const dbRouteMarkerHtmlContents = await Promise.all(dbRouteMarkerHtmlPromises);
+
+                dbRouteMarkerHtmlContents.forEach(html => {
+                    dbRouteMarkerList.innerHTML += html;
+                });
             } else {
                 dbRouteMarkerList.innerHTML = ''; // Clear if no markers
             }
@@ -278,7 +366,7 @@ export async function calculateRouteDistanceMarkers(marker1, marker2, travelMode
 
     if (!response.ok) {
         const error = await response.json().catch(() => null);
-        throw new Error(error?.error?.message || 'Failed to calculate route');
+        throw new Error(error?.error?.message || 'Rota hesaplanamadı.');
     }
 
     const data = await response.json();
@@ -346,7 +434,7 @@ export async function calculateRouteDistanceCoords(lat1, lng1, lat2, lng2, trave
 
     if (!response.ok) {
         const error = await response.json().catch(() => null);
-        throw new Error(error?.error?.message || 'Failed to calculate route');
+        throw new Error(error?.error?.message || 'Rota hesaplanamadı.');
     }
 
     const data = await response.json();
@@ -414,7 +502,7 @@ export async function calculateRoute(routeMarkers, isSpecialRoute = false, route
             setSpecialRoutePolylineAtIndex(routeIndex, null);
             // Special route info is part of the overall places list, no separate div to remove
         }
-        await updatePlacesListForRoute(); // Ensure marker lists are updated after route removal
+        debouncedUpdatePlacesListForRoute(); // Ensure marker lists are updated after route removal
         return;
     }
 
@@ -501,7 +589,7 @@ export async function calculateRoute(routeMarkers, isSpecialRoute = false, route
         const responseText = await response.text();
 
         if (!response.ok) {
-            let errorMessage = "Routes API error";
+            let errorMessage = "Routes API hatası.";
             try {
                 const errorData = JSON.parse(responseText);
                 errorMessage += `: ${errorData.error?.message || response.statusText}`;
@@ -614,7 +702,7 @@ export async function calculateRoute(routeMarkers, isSpecialRoute = false, route
                 updateRoutesList();
 
                 // IMPORTANT: Update the marker list for this route after it's rendered
-                await updatePlacesListForRoute();
+                debouncedUpdatePlacesListForRoute(); // Debounced call
 
             }
         } else {
@@ -622,7 +710,7 @@ export async function calculateRoute(routeMarkers, isSpecialRoute = false, route
         }
     } catch (error) {
         console.error('Error calculating route:', error);
-        alert('Could not calculate route: ' + error.message);
+        alert('Rota hesaplanamadı: ' + error.message);
 
         // Fall back to a simpler approach as a last resort
         fallbackDrawPolyline(routeMarkers, routeColor, routeIndex, isSpecialRoute); // Pass isSpecialRoute to fallback
@@ -721,7 +809,7 @@ export async function fallbackDrawPolyline(routeMarkers, routeColor = '#FF0000',
     updateRoutesList();
 
     // IMPORTANT: Update the marker list for this route after it's rendered
-    await updatePlacesListForRoute();
+    debouncedUpdatePlacesListForRoute();
 }
 
 /**
@@ -958,7 +1046,7 @@ export async function selectRoute(index) {
     // Show the selected route info
     await showRouteInfo(index);
     // Update the places list to reflect the current state (including special markers)
-    await updatePlacesListForRoute();
+    debouncedUpdatePlacesListForRoute();
 }
 
 /**
@@ -1031,11 +1119,8 @@ export async function showMarkerInfoWindow(marker, routeIdx, markerIndex, isSpec
 
     let contentString;
     const location = marker.getPosition();
-    const address = await new Promise((resolve) => {
-        getGeocoder().geocode({ location }, (results, status) => {
-            resolve(status === 'OK' && results[0] ? results[0].formatted_address : 'Address not found');
-        });
-    });
+    // Retrieve address from cachedAddress property on the marker
+    const address = marker.cachedAddress || 'Address not found'; 
 
     if (isSpecialMarker) {
         if (marker.passengerData) {
