@@ -190,7 +190,7 @@ async function initMap() {
             if (selectedRouteIndex >= 0) { // Only add if a DB route is selected
                 addMarkerToMap(e.latLng);
             } else {
-                displayMessage('Please select a route from the "Available Routes" list to add markers to, or toggle to "Passenger Mode" to add passenger addresses.');
+                displayMessage('"Mevcut Rotalar" listesinden bir rota seçerek işaretçi ekleyin veya "Yolcu Modu"na geçerek yolcu adresleri ekleyin.');
             }
         }
     };
@@ -206,13 +206,13 @@ async function initMap() {
             const routeMarkers = getRouteMarkers();
 
             if (selectedRouteIndex === -1) {
-                displayMessage('Please select a route to calculate!');
+                displayMessage('Lütfen hesaplamak için bir rota seçin!');
                 return;
             }
 
             // Calculate a database route
             if (!routeMarkers[selectedRouteIndex] || routeMarkers[selectedRouteIndex].length < 2) {
-                displayMessage('Please add at least two markers to the selected route!');
+                displayMessage('Lütfen seçili rotaya en az iki işaretçi ekleyin!');
                 return;
             }
             await calculateRouteForIndex(selectedRouteIndex);
@@ -353,7 +353,7 @@ async function processPendingPassengers() {
             console.log("Pending passengers processed and cleared from local storage.");
         } catch (error) {
             console.error("Error parsing pending passengers from local storage:", error);
-            displayMessage("Error loading saved passengers. Check console for details.");
+            displayMessage("Kaydedilmiş yolcular yüklenirken hata oluştu. Detaylar için konsolu kontrol edin.");
             localStorage.removeItem('pendingPassengers'); // Clear invalid data
         }
     } else {
@@ -503,7 +503,7 @@ export async function addMarkerToMap(position) {
 
     // Add marker to the currently selected DB route
     if (selectedRouteIndex === -1) {
-        displayMessage('Please select a route from the "Available Routes" list to add markers to.');
+        displayMessage('"Mevcut Rotalar" listesinden bir rota seçerek işaretçi ekleyin.');
         return;
     }
 
@@ -708,15 +708,50 @@ export function selectMapRoute(index) {
 }
 
 /**
- * Helper function to display messages to the user (replaces alert).
+ * Displays a message to the user in a user-friendly way.
  * @param {string} message - The message to display.
+ * @param {string} [type='info'] - Optional type of message ('info', 'success', 'error', etc.)
  */
-function displayMessage(message) {
-    // You can implement a custom modal or a temporary message box here.
-    // For now, it will log to console and show a simple alert for demonstration.
-    console.log("Message:", message);
-    // In a real application, replace this with a more user-friendly UI element.
-    alert(message);
+function displayMessage(message, type = 'info') {
+    console.log(`[${type.toUpperCase()}] ${message}`);
+
+    // Attempt to use a custom message container if it exists
+    let container = document.getElementById('message-container');
+    if (!container) {
+        // Create container if it doesn't exist
+        container = document.createElement('div');
+        container.id = 'message-container';
+        container.style.position = 'fixed';
+        container.style.top = '20px';
+        container.style.right = '20px';
+        container.style.zIndex = '1000';
+        container.style.maxWidth = '300px';
+        document.body.appendChild(container);
+    }
+
+    const messageBox = document.createElement('div');
+    messageBox.innerText = message;
+    messageBox.style.marginBottom = '10px';
+    messageBox.style.padding = '10px';
+    messageBox.style.borderRadius = '5px';
+    messageBox.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+    messageBox.style.backgroundColor = {
+        info: '#d9edf7',
+        success: '#dff0d8',
+        error: '#f2dede',
+        warning: '#fcf8e3'
+    }[type] || '#d9edf7';
+    messageBox.style.color = '#333';
+
+    container.appendChild(messageBox);
+
+    // Auto-remove message after a few seconds
+    setTimeout(() => {
+        container.removeChild(messageBox);
+        if (container.children.length === 0) {
+            document.body.removeChild(container);
+        }
+    }, 4000);
 }
 
 /**
@@ -728,9 +763,9 @@ export function toggleSpecialMarkerPlacementMode() {
     const specialMarkerMode = getSpecialMarkerMode();
     setSpecialMarkerMode(!specialMarkerMode);
     if (getSpecialMarkerMode()) {
-        displayMessage("Passenger Mode Enabled. Click on the map to add passenger addresses.");
+        displayMessage("Yolcu Modu Aktif. Haritaya tıklayarak yolcu adresleri ekleyebilirsiniz.");
     } else {
-        displayMessage("Route Station Mode Enabled. Click on the map to add stations to the selected route.");
+        displayMessage("Rota İstasyonu Modu Aktif. Haritaya tıklayarak seçili rotaya istasyon ekleyebilirsiniz.");
     }
 }
 

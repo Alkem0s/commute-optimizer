@@ -21,7 +21,7 @@ const test_markers = [
 ];
 
 // --- Geocoding Cache ---
-// A Map to store geocoded results. Keys will be "lat,lng" for reverse geocoding
+// A Map to store geocoded results. Keys will be "lat, lng" for reverse geocoding
 // or the address string for forward geocoding. Values will be the formatted address
 // or the geocoding result object.
 export const geocodeCache = new Map();
@@ -366,7 +366,7 @@ export async function calculateRouteDistanceMarkers(marker1, marker2, travelMode
 
     if (!response.ok) {
         const error = await response.json().catch(() => null);
-        throw new Error(error?.error?.message || 'Failed to calculate route');
+        throw new Error(error?.error?.message || 'Rota hesaplanamadı.');
     }
 
     const data = await response.json();
@@ -434,7 +434,7 @@ export async function calculateRouteDistanceCoords(lat1, lng1, lat2, lng2, trave
 
     if (!response.ok) {
         const error = await response.json().catch(() => null);
-        throw new Error(error?.error?.message || 'Failed to calculate route');
+        throw new Error(error?.error?.message || 'Rota hesaplanamadı.');
     }
 
     const data = await response.json();
@@ -589,7 +589,7 @@ export async function calculateRoute(routeMarkers, isSpecialRoute = false, route
         const responseText = await response.text();
 
         if (!response.ok) {
-            let errorMessage = "Routes API error";
+            let errorMessage = "Routes API hatası.";
             try {
                 const errorData = JSON.parse(responseText);
                 errorMessage += `: ${errorData.error?.message || response.statusText}`;
@@ -710,7 +710,7 @@ export async function calculateRoute(routeMarkers, isSpecialRoute = false, route
         }
     } catch (error) {
         console.error('Error calculating route:', error);
-        alert('Could not calculate route: ' + error.message);
+        alert('Rota hesaplanamadı: ' + error.message);
 
         // Fall back to a simpler approach as a last resort
         fallbackDrawPolyline(routeMarkers, routeColor, routeIndex, isSpecialRoute); // Pass isSpecialRoute to fallback
