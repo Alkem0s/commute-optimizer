@@ -212,17 +212,25 @@
           const html = await response.text();
           container.innerHTML = html;
 
-          // Handle specific page initialization
-          if (url === "map.html") {
-              loadGoogleMapsScript();
-              loadPageScript('map.js');
-          } else if (url === "api-test.html") {
-              loadPageScript('api-test.js');
-          } else if (url === "add-passenger.html") {
-              loadPageScript('add-passenger.js');
-          } else if (url === "passengers-list.html") {
-              loadPageScript('passengers-list.js');
-          }
+            // Handle specific page initialization using match
+            switch (url) {
+              case "map.html":
+                loadGoogleMapsScript();
+                loadPageScript('map.js');
+                break;
+              case "api-test.html":
+                loadPageScript('api-test.js');
+                break;
+              case "add-passenger.html":
+                loadPageScript('add-passenger.js');
+                break;
+              case "passengers-list.html":
+                loadPageScript('passengers-list.js');
+                break;
+              default:
+                // Default case if needed
+                break;
+            }
       } catch (err) {
           console.error("Page load error:", err);
           container.innerHTML = "<p>Error loading page. Please try again.</p>";
@@ -230,6 +238,7 @@
   }
 
   function loadPageScript(scriptName) {
+      // Remove any existing page-specific scripts to prevent duplicates
       const script = document.createElement('script');
       script.src = `./${scriptName}`;
       script.type = 'module';
