@@ -6,7 +6,7 @@ import {
     getSpecialRoutePolylines, setSpecialRoutePolylineAtIndex, clearSpecialMarkers,
     getSelectedRouteIndex, getRouteMarkers, getSpecialMarkerMode, setSpecialMarkerMode,
     addRouteMarkerArray, addRouteDataItem, getRouteData, getGeocoder,
-    setSelectedRouteIndex, updateRouteDataStationsCount, getMaxWalkDuration,
+    setSelectedRouteIndex, updateRouteDataStationsCount, getMaxWalkDuration, resetAppState
 } from './app-state.js';
 import {
     calculateRoute, findClosestMarkerInAllRoutes,
@@ -95,6 +95,12 @@ export function cleanupApp() {
     // Clear all markers from the map
     clearAllMarkers();
 
+    // Clear route information panels from DOM
+    clearRouteInfoPanels();
+
+    // Reset application state
+    resetAppState();
+
     // Clear global window references
     if (window.removeMapMarker) {
         delete window.removeMapMarker;
@@ -110,6 +116,34 @@ export function cleanupApp() {
     isAppInitialized = false;
 
     console.log("✅ cleanupApp complete");
+}
+
+/**
+ * Clears all route information panels from the DOM
+ * @private
+ */
+function clearRouteInfoPanels() {
+    // Remove all route info divs
+    const routeInfos = document.querySelectorAll('.route-info');
+    routeInfos.forEach(div => div.remove());
+
+    // Remove routes list container
+    const routesListContainer = document.getElementById('routes-list-container');
+    if (routesListContainer) {
+        routesListContainer.remove();
+    }
+
+    // Remove special markers panel
+    const specialMarkersPanel = document.getElementById('special-markers-panel');
+    if (specialMarkersPanel) {
+        specialMarkersPanel.remove();
+    }
+
+    // Clear the result container
+    const resultContainer = document.getElementById('result');
+    if (resultContainer) {
+        resultContainer.innerHTML = '';
+    }
 }
 
 /**
@@ -694,11 +728,6 @@ async function drawInitialRoutes(routes) {
 
     // Create the routes list container if it doesn't exist
     createRoutesListContainer();
-    // Initially select the first available DB route if any
-    const routeData = getRouteData();
-    if (routeData.length > 0) {
-        selectMapRoute(0); // Select the first database route
-    }
 
     // After all initial routes and markers are drawn and processed, update the places list
     await updatePlacesListForRoute();

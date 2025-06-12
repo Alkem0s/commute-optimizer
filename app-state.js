@@ -53,6 +53,28 @@ export const setMaxWalkDuration = (duration) => {
     }
 }
 
+/**
+ * Resets all application state to initial values
+ * @public
+ */
+export function resetAppState() {
+    // Clear all markers
+    routeMarkers.length = 0;
+    specialMarkers.length = 0;
+    specialRoutePolylines.length = 0;
+    routePolylines.length = 0;
+    routeData.length = 0;
+    
+    // Reset other state
+    selectedRouteIndex = -1;
+    specialMarkerMode = false;
+    
+    // Clear map references
+    map = null;
+    geocoder = null;
+    infoWindow = null;
+}
+
 // Functions to modify arrays
 export const addMarkerToRoute = (routeIndex, marker) => {
     if (!routeMarkers[routeIndex]) {
