@@ -12,8 +12,9 @@ import {
     calculateRoute, findClosestMarkerInAllRoutes,
     createRoutesListContainer, updateRoutesList, calculateRouteForIndex,
     showMarkerInfoWindow, getDatabaseMarkers, removeMarker, updateMarkerLabels,
-    updatePlacesListForRoute, selectRoute,
-    getDistanceBetweenCoords, calculateRouteDistanceMarkers, calculateRouteDistanceCoords
+    updatePlacesListForRoute, selectRoute, geocodeCache,
+    getDistanceBetweenCoords, calculateRouteDistanceMarkers, calculateRouteDistanceCoords,
+    updateMarkerAddressCache, debouncedUpdatePlacesListForRoute
 } from './app-utils.js';
 import { optimizeRoute } from './optimizer.js'; 
 import { getAllVehicles } from './api.js';
@@ -51,6 +52,9 @@ export async function initApp() {
         // Initialize markers after map is ready
         await initMarkers();
         
+        // Process any pending passengers from local storage
+        await processPendingPassengers();
+
         isAppInitialized = true;
         console.log("✅ initApp initialization complete");
     } catch (error) {
@@ -334,6 +338,29 @@ function handleOptimizerResult() {
     }
 }
 
+async function processPendingPassengers() {
+    console.log("Checking for pending passengers in local storage...");
+    const pendingPassengersJson = localStorage.getItem('pendingPassengers');
+    if (pendingPassengersJson) {
+        try {
+            const pendingPassengers = JSON.parse(pendingPassengersJson);
+            if (pendingPassengers && pendingPassengers.length > 0) {
+                // Clear existing special markers if new passengers are being added from storage
+                await addPassengersToMap(pendingPassengers, true);
+            }
+            // Clear the local storage item after processing to prevent re-adding on subsequent loads
+            localStorage.removeItem('pendingPassengers');
+            console.log("Pending passengers processed and cleared from local storage.");
+        } catch (error) {
+            console.error("Error parsing pending passengers from local storage:", error);
+            displayMessage("Error loading saved passengers. Check console for details.");
+            localStorage.removeItem('pendingPassengers'); // Clear invalid data
+        }
+    } else {
+        console.log("No pending passengers found in local storage.");
+    }
+}
+
 /**
  * Public API: Adds passengers as special markers on the map.
  * This method geocodes passenger addresses and creates special markers for them.
@@ -344,11 +371,8 @@ function handleOptimizerResult() {
  */
 export async function addPassengersToMap(passengers, clearExisting = true) {
     const geocoder = getGeocoder();
-    const results = {
-        successful: 0,
-        failed: 0,
-        errors: []
-    };
+    const map = getMap();
+    const results = { successful: 0, failed: 0, errors: [] };
 
     if (!geocoder) {
         const error = 'Geocoder not initialized';
@@ -361,33 +385,59 @@ export async function addPassengersToMap(passengers, clearExisting = true) {
         clearSpecialMarkers();
     }
 
-    displayMessage(`Adding ${passengers.length} passengers to map...`);
-
-    for (const passenger of passengers) {
-        try {
+    const geocodingPromises = passengers.map(passenger => {
+        return new Promise(async (resolve) => {
             const address = passenger.data?.ADDRESS;
             if (!address) {
                 const error = `No address found for passenger: ${passenger.id}`;
                 console.warn(error);
                 results.errors.push(error);
                 results.failed++;
-                continue;
+                resolve(null); // Resolve with null to indicate failure for this passenger
+                return;
             }
 
-            // Geocode the address
-            const geocodeResult = await new Promise((resolve, reject) => {
-                geocoder.geocode({ address: address }, (results, status) => {
-                    if (status === 'OK' && results && results.length > 0) {
-                        resolve(results[0]);
-                    } else {
-                        reject(new Error(`Geocoding failed for address "${address}": ${status}`));
-                    }
-                });
-            });
+            // Check cache first for forward geocoding
+            const cachedGeocode = geocodeCache.get(address);
+            if (cachedGeocode) {
+                console.log(`Using cached geocode for address: ${address}`);
+                resolve({ passenger, geocodeResult: cachedGeocode });
+                return;
+            }
 
+            try {
+                // Geocode the address
+                const geocodeResult = await new Promise((geoResolve, geoReject) => {
+                    geocoder.geocode({ address: address }, (results, status) => {
+                        if (status === 'OK' && results && results.length > 0) {
+                            // Store in cache
+                            geocodeCache.set(address, results[0]);
+                            geoResolve(results[0]);
+                        } else {
+                            geoReject(new Error(`Geocoding failed for address "${address}": ${status}`));
+                        }
+                    });
+                });
+                resolve({ passenger, geocodeResult });
+            } catch (error) {
+                const errorMsg = `Failed to geocode address for passenger ${passenger.id}: ${error.message}`;
+                console.error(errorMsg);
+                results.errors.push(errorMsg);
+                results.failed++;
+                resolve(null);
+            }
+        });
+    });
+
+    const geocodedPassengers = await Promise.all(geocodingPromises);
+
+    const markerPromises = geocodedPassengers.map(async (item) => {
+        if (!item) return null; // Skip failed geocodes
+
+        const { passenger, geocodeResult } = item;
+        try {
             const position = geocodeResult.geometry.location;
-            const map = getMap();
-            const specialMarkers = getSpecialMarkers();
+            const specialMarkers = getSpecialMarkers(); // Get the current array for accurate index
 
             // Create special marker with passenger information
             const passengerMarker = new google.maps.Marker({
@@ -400,41 +450,40 @@ export async function addPassengersToMap(passengers, clearExisting = true) {
 
             // Store passenger data in the marker for info window
             passengerMarker.passengerData = passenger;
-
+            // Store the initial geocoded address directly on the marker
+            passengerMarker.cachedAddress = geocodeResult.formatted_address; 
             addSpecialMarker(passengerMarker); // Add to state
-            const specialMarkerIndex = specialMarkers.length - 1;
+
+            const specialMarkerIndex = specialMarkers.length - 1; // Index after adding this marker
 
             // Add click listener for info window with passenger details, using showMarkerInfoWindow
             passengerMarker.addListener('click', () => {
                 showMarkerInfoWindow(passengerMarker, -1, specialMarkerIndex, true);
             });
 
-            // Add drag listener to recalculate route
+            // Add drag listener to recalculate route, debounced update
             passengerMarker.addListener('dragend', async () => {
+                // Invalidate/update cache for this marker's new position
+                await updateMarkerAddressCache(passengerMarker.getPosition(), passengerMarker);
                 await updateSpecialMarkerRoute(passengerMarker, specialMarkerIndex);
-                await updatePlacesListForRoute();
+                debouncedUpdatePlacesListForRoute(); // Debounced call
             });
 
-            // Calculate initial route for the passenger marker
-            await updateSpecialMarkerRoute(passengerMarker, specialMarkerIndex);
             results.successful++;
-
+            return updateSpecialMarkerRoute(passengerMarker, specialMarkerIndex); // Return the promise for route calculation
         } catch (error) {
-            const errorMsg = `Failed to add passenger ${passenger.id}: ${error.message}`;
+            const errorMsg = `Failed to add passenger marker or calculate route for ${passenger.id}: ${error.message}`;
             console.error(errorMsg);
             results.errors.push(errorMsg);
             results.failed++;
+            return null;
         }
-    }
+    });
 
-    await updatePlacesListForRoute(); // Update the places list
-    
-    // Display summary message
-    if (results.successful > 0) {
-        displayMessage(`Successfully added ${results.successful} passenger${results.successful > 1 ? 's' : ''} to map${results.failed > 0 ? `. ${results.failed} failed to add.` : '.'}`);
-    } else {
-        displayMessage(`Failed to add passengers to map. Check console for details.`);
-    }
+    // Wait for all markers to be added and their initial routes calculated
+    await Promise.all(markerPromises);
+
+    debouncedUpdatePlacesListForRoute(); // Debounced call after all passengers are added
 
     return results;
 }
@@ -476,16 +525,20 @@ export async function addMarkerToMap(position) {
     const index = targetMarkersArray.length - 1; // Get the index of the newly added marker
 
     // Add left-click listener for info window
-    marker.addListener('click', () => {
+    marker.addListener('click', async () => {
+        // When a marker is clicked, update its cached address if needed
+        await updateMarkerAddressCache(marker.getPosition(), marker);
         showMarkerInfoWindow(marker, selectedRouteIndex, index);
     });
 
     marker.addListener('dragend', async () => {
+        // Invalidate/update cache for this marker's new position
+        await updateMarkerAddressCache(marker.getPosition(), marker);
         await calculateRouteForIndex(selectedRouteIndex);
 
         // Recalculate all special marker routes after a regular route marker is dragged
         await updateAllSpecialMarkerRoutes();
-        await updatePlacesListForRoute();
+        debouncedUpdatePlacesListForRoute(); // Debounced call
     });
 
     // Recalculate the selected route if there are enough markers
@@ -493,7 +546,7 @@ export async function addMarkerToMap(position) {
         await calculateRouteForIndex(selectedRouteIndex);
     }
     updateRoutesList(); // Update count in routes list
-    await updatePlacesListForRoute();
+    debouncedUpdatePlacesListForRoute(); // Debounced call
 }
 
 /**
@@ -517,19 +570,23 @@ export async function addSpecialMarkerToMap(position) {
     const specialMarkerIndex = specialMarkers.length - 1; // Get the index of the newly added marker
 
     // Add left-click listener for info window
-    newSpecialMarker.addListener('click', () => {
+    newSpecialMarker.addListener('click', async () => {
+        // When a marker is clicked, update its cached address if needed
+        await updateMarkerAddressCache(newSpecialMarker.getPosition(), newSpecialMarker);
         showMarkerInfoWindow(newSpecialMarker, -1, specialMarkerIndex, true); // -1 for special marker routeIdx
     });
 
     // When the special marker is placed or moved, recalculate the closest marker
     newSpecialMarker.addListener('dragend', async () => {
+        // Invalidate/update cache for this marker's new position
+        await updateMarkerAddressCache(newSpecialMarker.getPosition(), newSpecialMarker);
         await updateSpecialMarkerRoute(newSpecialMarker, specialMarkerIndex);
-        await updatePlacesListForRoute();
+        debouncedUpdatePlacesListForRoute(); // Debounced call
     });
 
     // Calculate initial route for the new special marker
     await updateSpecialMarkerRoute(newSpecialMarker, specialMarkerIndex);
-    await updatePlacesListForRoute(); // Update the places list
+    debouncedUpdatePlacesListForRoute(); // Debounced call
 }
 
 /**
@@ -563,9 +620,12 @@ async function updateSpecialMarkerRoute(specialMarker, specialMarkerIndex) {
  */
 async function updateAllSpecialMarkerRoutes() {
     const specialMarkers = getSpecialMarkers();
-    for (let i = 0; i < specialMarkers.length; i++) {
-        await updateSpecialMarkerRoute(specialMarkers[i], i);
-    }
+    // Create an array of promises, one for each updateSpecialMarkerRoute call
+    const updatePromises = specialMarkers.map((marker, i) =>
+        updateSpecialMarkerRoute(marker, i)
+    );
+    // Wait for all promises to resolve concurrently
+    await Promise.all(updatePromises);
 }
 
 /**
@@ -583,7 +643,7 @@ export function removeMapMarker(marker, routeIdx, markerIndex) {
         if (actualMarkerIndex !== -1) {
             const removed = removeSpecialMarker(actualMarkerIndex);
             if (removed) {
-                updatePlacesListForRoute(); // Update places list after removal
+                debouncedUpdatePlacesListForRoute(); // Debounced call after removal
             }
             return removed;
         }
@@ -591,7 +651,7 @@ export function removeMapMarker(marker, routeIdx, markerIndex) {
     }
     const removed = removeMarker(marker, routeIdx); // removeMarker in app-utils takes marker and routeIdx only
     if (removed) {
-        updatePlacesListForRoute(); // Update places list after removal
+        debouncedUpdatePlacesListForRoute(); // Debounced call after removal
         updateAllSpecialMarkerRoutes(); // Recalculate special routes if a regular marker was removed
     }
     return removed;
@@ -697,7 +757,7 @@ async function drawInitialRoutes(routes) {
         });
 
         // Create markers for this route
-        route.markers.forEach(markerData => {
+        for (const markerData of route.markers) { // Use for...of for async operations
             const latLng = new google.maps.LatLng(markerData.lat, markerData.lng);
             const marker = new google.maps.Marker({
                 position: latLng,
@@ -706,6 +766,10 @@ async function drawInitialRoutes(routes) {
                 label: (currentRouteMarkers.length + 1).toString(),
             });
 
+            // Store the initial geocoded address directly on the marker
+            // Perform reverse geocoding once when the marker is created
+            await updateMarkerAddressCache(latLng, marker);
+
             currentRouteMarkers.push(marker);
 
             // Add listener for left-click to show info window
@@ -713,13 +777,15 @@ async function drawInitialRoutes(routes) {
                 showMarkerInfoWindow(marker, routeIndex, currentRouteMarkers.indexOf(marker));
             });
 
-            // Add dragend listener for recalculation
+            // Add dragend listener for recalculation, debounced update
             marker.addListener('dragend', async () => {
+                // Invalidate/update cache for this marker's new position
+                await updateMarkerAddressCache(marker.getPosition(), marker);
                 await calculateRouteForIndex(routeIndex);
                 await updateAllSpecialMarkerRoutes(); // Recalculate all special marker routes
-                await updatePlacesListForRoute();
+                debouncedUpdatePlacesListForRoute(); // Debounced call
             });
-        });
+        }
 
         // Calculate and draw the route if there are enough markers
         if (currentRouteMarkers.length > 1) {
@@ -731,5 +797,5 @@ async function drawInitialRoutes(routes) {
     createRoutesListContainer();
 
     // After all initial routes and markers are drawn and processed, update the places list
-    await updatePlacesListForRoute();
+    debouncedUpdatePlacesListForRoute(); // Debounced call
 }
