@@ -37,6 +37,21 @@ let tableViewButton = null;
 let selectAllCheckbox = null;
 let handleFilterInput = null;
 
+// Modal elements
+let editPassengerModal = null;
+let closeEditModalBtn = null;
+let editPassengerForm = null;
+let savePassengerBtn = null;
+let cancelEditBtn = null;
+let editPassengerIdInput = null;
+let editRouteInput = null;
+let editAddressInput = null;
+let editDestinationDescriptionInput = null;
+let editDestinationPlaceInput = null;
+let editDistanceToAddressInput = null;
+let editServiceUsageInput = null;
+let editStopAddressInput = null;
+
 async function ensureFirebaseInitialized() {
   if (!isFirebaseInitialized) {
     try {
@@ -246,6 +261,10 @@ function renderPassengersTable() {
       <td class="text-gray-700">${passenger.data.ADDRESS || 'N/A'}</td>
       <td class="text-gray-700">${passenger.data.DESTINATION_PLACE || 'N/A'}</td>
       <td class="text-gray-700">${passenger.data.STOP_ADDRESS || 'N/A'}</td>
+      <td class="text-center">
+          <button class="btn-action btn-edit" data-passenger-id="${passenger.id}">Düzenle</button>
+          <button class="btn-action btn-delete" data-passenger-id="${passenger.id}">Sil</button>
+      </td>
     `;
     
     // Add event listener for checkbox
@@ -253,6 +272,13 @@ function renderPassengersTable() {
     checkbox.addEventListener('change', (e) => {
       togglePassengerSelection(passenger.id, e.target.checked);
     });
+
+    // Add event listeners for edit and delete buttons
+    const editButton = row.querySelector('.btn-edit');
+    editButton.addEventListener('click', () => openEditModal(passenger.id));
+
+    const deleteButton = row.querySelector('.btn-delete');
+    deleteButton.addEventListener('click', () => deletePassenger(passenger.id));
     
     tableBody.appendChild(row);
   });
@@ -359,26 +385,109 @@ async function fetchAndRenderPassengers() {
   }
 }
 
+// Function to open the edit modal and populate it with passenger data
+async function openEditModal(passengerId) {
+  const passenger = allPassengersData.find(p => p.id === passengerId);
+  if (!passenger) {
+    alert('Passenger not found!');
+    return;
+  }
+
+  editPassengerIdInput.value = passenger.id.replace(/_/g, ' ');
+  editRouteInput.value = passenger.data.ROUTE || '';
+  editAddressInput.value = passenger.data.ADDRESS || '';
+  editDestinationDescriptionInput.value = passenger.data.DESTINATION_DESCRIPTION || '';
+  editDestinationPlaceInput.value = passenger.data.DESTINATION_PLACE || '';
+  editDistanceToAddressInput.value = passenger.data.DISTANCE_TO_ADDRESS || '';
+  editServiceUsageInput.value = passenger.data.SERVICE_USAGE || '';
+  editStopAddressInput.value = passenger.data.STOP_ADDRESS || '';
+
+  editPassengerModal.classList.remove('hidden');
+}
+
+// Function to close the edit modal
+function closeEditModal() {
+  editPassengerModal.classList.add('hidden');
+  editPassengerForm.reset();
+}
+
+// Function to handle saving passenger edits
+async function savePassenger(event) {
+  event.preventDefault();
+
+  const passengerId = editPassengerIdInput.value.toLowerCase().replace(/ /g, '_'); // Convert back to ID format
+  const updatedPassengerData = {
+    ROUTE: editRouteInput.value,
+    ADDRESS: editAddressInput.value,
+    DESTINATION_DESCRIPTION: editDestinationDescriptionInput.value,
+    DESTINATION_PLACE: editDestinationPlaceInput.value,
+    DISTANCE_TO_ADDRESS: editDistanceToAddressInput.value,
+    SERVICE_USAGE: editServiceUsageInput.value,
+    STOP_ADDRESS: editStopAddressInput.value
+  };
+
+  try {
+    await api.setPassenger(passengerId, updatedPassengerData);
+    alert('Passenger updated successfully!');
+    closeEditModal();
+    await fetchAndRenderPassengers(); // Refresh the list
+  } catch (error) {
+    console.error('Error saving passenger:', error);
+    alert('Error saving passenger: ' + error.message);
+  }
+}
+
+// Function to handle deleting a passenger
+async function deletePassenger(passengerId) {
+  if (confirm(`Are you sure you want to delete passenger "${passengerId.replace(/_/g, ' ')}"?`)) {
+    try {
+      await api.deletePassenger(passengerId);
+      alert('Passenger deleted successfully!');
+      await fetchAndRenderPassengers(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting passenger:', error);
+      alert('Error deleting passenger: ' + error.message);
+    }
+  }
+}
+
+
 export async function initPassengersList() {
   console.log("🚀 initPassengersList called...");
 
   // Get DOM elements
-  refreshListButton = document.getElementById('refreshListButton');
+  refreshListButton = document.getElementById('refreshListButton'); // This button does not exist in the HTML, commenting out.
   exportExcelButton = document.getElementById('exportExcelBtn');
   filterInput = document.getElementById('filterInput');
-  searchButton = document.getElementById('searchButton');
+  searchButton = document.getElementById('searchButton'); // This button does not exist in the HTML, commenting out.
   sortByNameButton = document.getElementById('sortByNameBtn');
   sortByRouteButton = document.getElementById('sortByRouteBtn');
   selectAllButton = document.getElementById('selectAllBtn');
   clearSelectionButton = document.getElementById('clearSelectionBtn');
   sendToMapButton = document.getElementById('sendToMapBtn');
-  tableViewButton = document.getElementById('tableViewBtn');
+  tableViewButton = document.getElementById('tableViewBtn'); // This button does not exist in the HTML, commenting out.
   selectAllCheckbox = document.getElementById('selectAllCheckbox');
 
+  // Modal elements
+  editPassengerModal = document.getElementById('editPassengerModal');
+  closeEditModalBtn = document.getElementById('closeEditModalBtn');
+  editPassengerForm = document.getElementById('editPassengerForm');
+  savePassengerBtn = document.getElementById('savePassengerBtn');
+  cancelEditBtn = document.getElementById('cancelEditBtn');
+  editPassengerIdInput = document.getElementById('editPassengerId');
+  editRouteInput = document.getElementById('editRoute');
+  editAddressInput = document.getElementById('editAddress');
+  editDestinationDescriptionInput = document.getElementById('editDestinationDescription');
+  editDestinationPlaceInput = document.getElementById('editDestinationPlace');
+  editDistanceToAddressInput = document.getElementById('editDistanceToAddress');
+  editServiceUsageInput = document.getElementById('editServiceUsage');
+  editStopAddressInput = document.getElementById('editStopAddress');
+
+
   // Attach event listeners
-  if (refreshListButton) {
-    refreshListButton.addEventListener('click', fetchAndRenderPassengers);
-  }
+  // if (refreshListButton) {
+  //   refreshListButton.addEventListener('click', fetchAndRenderPassengers);
+  // }
   if (exportExcelButton) {
     exportExcelButton.addEventListener('click', exportToExcel);
   }
@@ -387,9 +496,9 @@ export async function initPassengersList() {
     handleFilterInput = () => filterPassengers();
     filterInput.addEventListener('input', handleFilterInput);
   }
-  if (searchButton) {
-    searchButton.addEventListener('click', () => filterPassengers());
-  }
+  // if (searchButton) {
+  //   searchButton.addEventListener('click', () => filterPassengers());
+  // }
 
   if (sortByNameButton) {
     sortByNameButton.addEventListener('click', () => {
@@ -416,10 +525,10 @@ export async function initPassengersList() {
   }
 
   // Ensure table view is always active and doesn't need a click
-  if (tableViewButton) {
-    tableViewButton.classList.add('active');
-    // No need for a click listener on tableViewButton as it's the only view
-  }
+  // if (tableViewButton) {
+  //   tableViewButton.classList.add('active');
+  //   // No need for a click listener on tableViewButton as it's the only view
+  // }
 
   if (selectAllCheckbox) {
     selectAllCheckbox.addEventListener('change', (e) => {
@@ -431,6 +540,17 @@ export async function initPassengersList() {
     });
   }
 
+  // Modal event listeners
+  if (closeEditModalBtn) {
+    closeEditModalBtn.addEventListener('click', closeEditModal);
+  }
+  if (cancelEditBtn) {
+    cancelEditBtn.addEventListener('click', closeEditModal);
+  }
+  if (editPassengerForm) {
+    editPassengerForm.addEventListener('submit', savePassenger);
+  }
+
   // Initial fetch and render
   await fetchAndRenderPassengers();
   console.log("✅ initPassengersList initialization complete");
@@ -440,10 +560,10 @@ export function cleanupPassengersList() {
   console.log("🧹 cleanupPassengersList called...");
 
   // Remove event listeners
-  if (refreshListButton) {
-    refreshListButton.removeEventListener('click', fetchAndRenderPassengers);
-    refreshListButton = null;
-  }
+  // if (refreshListButton) {
+  //   refreshListButton.removeEventListener('click', fetchAndRenderPassengers);
+  //   refreshListButton = null;
+  // }
   if (exportExcelButton) {
     exportExcelButton.removeEventListener('click', exportToExcel);
     exportExcelButton = null;
@@ -453,16 +573,22 @@ export function cleanupPassengersList() {
     filterInput = null;
     handleFilterInput = null;
   }
-  if (searchButton) {
-    searchButton.removeEventListener('click', () => filterPassengers());
-    searchButton = null;
-  }
+  // if (searchButton) {
+  //   searchButton.removeEventListener('click', () => filterPassengers());
+  //   searchButton = null;
+  // }
   if (sortByNameButton) {
-    sortByNameButton.removeEventListener('click', () => {});
+    sortByNameButton.removeEventListener('click', () => {
+      currentSortCriteria = 'name';
+      renderPassengersList();
+    });
     sortByNameButton = null;
   }
   if (sortByRouteButton) {
-    sortByRouteButton.removeEventListener('click', () => {});
+    sortByRouteButton.removeEventListener('click', () => {
+      currentSortCriteria = 'route';
+      renderPassengersList();
+    });
     sortByRouteButton = null;
   }
   if (selectAllButton) {
@@ -477,14 +603,44 @@ export function cleanupPassengersList() {
     sendToMapButton.removeEventListener('click', sendSelectedPassengersToMap);
     sendToMapButton = null;
   }
-  if (tableViewButton) {
-    // No need to remove listener as it wasn't added
-    tableViewButton = null;
-  }
+  // if (tableViewButton) {
+  //   // No need to remove listener as it wasn't added
+  //   tableViewButton = null;
+  // }
   if (selectAllCheckbox) {
-    selectAllCheckbox.removeEventListener('change', () => {});
+    selectAllCheckbox.removeEventListener('change', (e) => {
+      if (e.target.checked) {
+        selectAllPassengers();
+      } else {
+        clearAllSelections();
+      }
+    });
     selectAllCheckbox = null;
   }
+
+  // Modal event listeners cleanup
+  if (closeEditModalBtn) {
+    closeEditModalBtn.removeEventListener('click', closeEditModal);
+    closeEditModalBtn = null;
+  }
+  if (cancelEditBtn) {
+    cancelEditBtn.removeEventListener('click', closeEditModal);
+    cancelEditBtn = null;
+  }
+  if (editPassengerForm) {
+    editPassengerForm.removeEventListener('submit', savePassenger);
+    editPassengerForm = null;
+    savePassengerBtn = null; // Also clear these since they are part of the form
+    editPassengerIdInput = null;
+    editRouteInput = null;
+    editAddressInput = null;
+    editDestinationDescriptionInput = null;
+    editDestinationPlaceInput = null;
+    editDistanceToAddressInput = null;
+    editServiceUsageInput = null;
+    editStopAddressInput = null;
+  }
+  editPassengerModal = null; // Clear modal reference
 
   // Clear data and reset state
   allPassengersData = [];

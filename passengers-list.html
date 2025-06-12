@@ -104,8 +104,6 @@
     color: #374151;
 }
 
-
-
         /* Search Input */
         .search-input {
             border: 2px solid #e5e7eb;
@@ -199,6 +197,123 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn-action {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-left: 0.5rem;
+            border: none;
+        }
+        .btn-edit {
+            background-color: #34d399; /* Green */
+            color: white;
+        }
+        .btn-edit:hover {
+            background-color: #059669;
+        }
+        .btn-delete {
+            background-color: #ef4444; /* Red */
+            color: white;
+        }
+        .btn-delete:hover {
+            background-color: #dc2626;
+        }
+        .btn-save {
+            background-color: #2563eb; /* Blue */
+            color: white;
+            padding: 0.75rem 1.5rem;
+        }
+        .btn-save:hover {
+            background-color: #1d4ed8;
+        }
+        .btn-cancel {
+            background-color: #6b7280; /* Gray */
+            color: white;
+            padding: 0.75rem 1.5rem;
+        }
+        .btn-cancel:hover {
+            background-color: #4b5563;
+        }
     </style>
 </head>
 <body>
@@ -236,7 +351,6 @@
                 </button>
             </div>
 
-
             <div id="loading-indicator" class="text-center py-10">
                 <div class="loading-spinner mx-auto mb-4"></div>
                 <p class="text-gray-600 text-lg">Yolcular yükleniyor...</p>
@@ -263,9 +377,46 @@
                                 <th class="w-64">Adres</th>
                                 <th class="w-48">Varış Noktası</th>
                                 <th class="w-64">Durak Adresi</th>
-                            </tr>
+                                <th class="w-40">Eylemler</th> </tr>
                         </thead>
                         <tbody id="passengers-table-body">
+                            <!-- Sample passenger data for demonstration -->
+                            <tr data-passenger-id="ahmet_yilmaz">
+                                <td class="text-center"><input type="checkbox" class="passenger-checkbox"></td>
+                                <td>Ahmet Yılmaz</td>
+                                <td>Rota A</td>
+                                <td>Atatürk Mah. 123 Sok. No:45, İstanbul</td>
+                                <td>İş Merkezi</td>
+                                <td>Atatürk Bulvarı No:12</td>
+                                <td>
+                                    <button class="btn-action btn-edit edit-passenger-btn" data-passenger-id="ahmet_yilmaz">Düzenle</button>
+                                    <button class="btn-action btn-delete delete-passenger-btn" data-passenger-id="ahmet_yilmaz">Sil</button>
+                                </td>
+                            </tr>
+                            <tr data-passenger-id="ayse_kaya">
+                                <td class="text-center"><input type="checkbox" class="passenger-checkbox"></td>
+                                <td>Ayşe Kaya</td>
+                                <td>Rota B</td>
+                                <td>Cumhuriyet Cad. 456 Sok. No:78, Ankara</td>
+                                <td>Üniversite</td>
+                                <td>Cumhuriyet Meydanı No:34</td>
+                                <td>
+                                    <button class="btn-action btn-edit edit-passenger-btn" data-passenger-id="ayse_kaya">Düzenle</button>
+                                    <button class="btn-action btn-delete delete-passenger-btn" data-passenger-id="ayse_kaya">Sil</button>
+                                </td>
+                            </tr>
+                            <tr data-passenger-id="mehmet_ozturk">
+                                <td class="text-center"><input type="checkbox" class="passenger-checkbox"></td>
+                                <td>Mehmet Öztürk</td>
+                                <td>Rota C</td>
+                                <td>Gazi Paşa Mah. 789 Sok. No:90, İzmir</td>
+                                <td>Hastane</td>
+                                <td>Gazi Bulvarı No:56</td>
+                                <td>
+                                    <button class="btn-action btn-edit edit-passenger-btn" data-passenger-id="mehmet_ozturk">Düzenle</button>
+                                    <button class="btn-action btn-delete delete-passenger-btn" data-passenger-id="mehmet_ozturk">Sil</button>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -273,6 +424,253 @@
         </div>
     </div>
 
-    <script src="passengers-list.js"></script>
+    <!-- Edit Passenger Modal -->
+    <div id="editPassengerModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-btn" id="closeEditModalBtn">&times;</button>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6" id="modal-title">Yolcu Düzenle</h2>
+            <form id="editPassengerForm">
+                <div class="form-group">
+                    <label for="editPassengerId">Yolcu İsmi</label>
+                    <input type="text" id="editPassengerId" class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="editRoute">Rota</label>
+                    <input type="text" id="editRoute" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="editAddress">Adres</label>
+                    <textarea id="editAddress" class="form-input"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editDestinationDescription">Varış Açıklaması</label>
+                    <input type="text" id="editDestinationDescription" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="editDestinationPlace">Varış Yeri</label>
+                    <input type="text" id="editDestinationPlace" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="editDistanceToAddress">İkametgah Adresine Uzaklık</label>
+                    <input type="text" id="editDistanceToAddress" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="editServiceUsage">Servis Kullanımı</label>
+                    <input type="text" id="editServiceUsage" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="editStopAddress">Durak Adresi</label>
+                    <textarea id="editStopAddress" class="form-input"></textarea>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" id="cancelEditBtn" class="btn btn-cancel">İptal</button>
+                    <button type="submit" id="savePassengerBtn" class="btn btn-save">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Sample passenger data for demonstration
+        const passengerData = {
+            'ahmet_yilmaz': {
+                name: 'Ahmet Yılmaz',
+                route: 'Rota A',
+                address: 'Atatürk Mah. 123 Sok. No:45, İstanbul',
+                destination: 'İş Merkezi',
+                stopAddress: 'Atatürk Bulvarı No:12'
+            },
+            'ayse_kaya': {
+                name: 'Ayşe Kaya',
+                route: 'Rota B',
+                address: 'Cumhuriyet Cad. 456 Sok. No:78, Ankara',
+                destination: 'Üniversite',
+                stopAddress: 'Cumhuriyet Meydanı No:34'
+            },
+            'mehmet_ozturk': {
+                name: 'Mehmet Öztürk',
+                route: 'Rota C',
+                address: 'Gazi Paşa Mah. 789 Sok. No:90, İzmir',
+                destination: 'Hastane',
+                stopAddress: 'Gazi Bulvarı No:56'
+            }
+        };
+
+        let currentEditingPassengerId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal elements
+            const editPassengerModal = document.getElementById('editPassengerModal');
+            const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
+            const editPassengerForm = document.getElementById('editPassengerForm');
+            const modalTitle = document.getElementById('modal-title');
+            
+            // Form elements
+            const editPassengerName = document.getElementById('editPassengerName');
+            const editRoute = document.getElementById('editRoute');
+            const editAddress = document.getElementById('editAddress');
+            const editDestination = document.getElementById('editDestination');
+            const editStopAddress = document.getElementById('editStopAddress');
+            
+            // Function to open the edit modal
+            function openEditModal(passengerId) {
+                console.log('Opening edit modal for passenger:', passengerId);
+                
+                const passenger = passengerData[passengerId];
+                if (!passenger) {
+                    console.error('Passenger not found:', passengerId);
+                    alert('Yolcu bulunamadı!');
+                    return;
+                }
+
+                currentEditingPassengerId = passengerId;
+                
+                // Populate form fields
+                editPassengerName.value = passenger.name;
+                editRoute.value = passenger.route;
+                editAddress.value = passenger.address;
+                editDestination.value = passenger.destination;
+                editStopAddress.value = passenger.stopAddress;
+                
+                // Update modal title
+                modalTitle.textContent = `${passenger.name} - Düzenle`;
+                
+                // Show modal
+                editPassengerModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+            
+            // Function to close the edit modal
+            function closeEditModal() {
+                editPassengerModal.classList.remove('active');
+                document.body.style.overflow = '';
+                currentEditingPassengerId = null;
+                editPassengerForm.reset();
+            }
+            
+            // Function to save passenger changes
+            function savePassengerChanges(event) {
+                event.preventDefault();
+                
+                if (!currentEditingPassengerId) {
+                    alert('Hata: Düzenlenecek yolcu bulunamadı!');
+                    return;
+                }
+                
+                // Get updated values
+                const updatedData = {
+                    name: editPassengerName.value,
+                    route: editRoute.value,
+                    address: editAddress.value,
+                    destination: editDestination.value,
+                    stopAddress: editStopAddress.value
+                };
+                
+                // Update passenger data
+                passengerData[currentEditingPassengerId] = updatedData;
+                
+                // Update the table row
+                updateTableRow(currentEditingPassengerId, updatedData);
+                
+                // Show success message
+                alert('Yolcu bilgileri başarıyla güncellendi!');
+                
+                // Close modal
+                closeEditModal();
+            }
+            
+            // Function to update table row
+            function updateTableRow(passengerId, data) {
+                const row = document.querySelector(`tr[data-passenger-id="${passengerId}"]`);
+                if (row) {
+                    const cells = row.querySelectorAll('td');
+                    cells[1].textContent = data.name; // Name
+                    cells[2].textContent = data.route; // Route
+                    cells[3].textContent = data.address; // Address
+                    cells[4].textContent = data.destination; // Destination
+                    cells[5].textContent = data.stopAddress; // Stop Address
+                }
+            }
+            
+            // Function to delete passenger
+            function deletePassenger(passengerId) {
+                const passenger = passengerData[passengerId];
+                if (!passenger) {
+                    alert('Yolcu bulunamadı!');
+                    return;
+                }
+                
+                if (confirm(`"${passenger.name}" adlı yolcuyu silmek istediğinizden emin misiniz?`)) {
+                    // Remove from data
+                    delete passengerData[passengerId];
+                    
+                    // Remove from table
+                    const row = document.querySelector(`tr[data-passenger-id="${passengerId}"]`);
+                    if (row) {
+                        row.remove();
+                    }
+                    
+                    alert('Yolcu başarıyla silindi!');
+                }
+            }
+            
+            // Event listeners for edit buttons
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('edit-passenger-btn')) {
+                    const passengerId = e.target.dataset.passengerId;
+                    openEditModal(passengerId);
+                }
+                
+                if (e.target.classList.contains('delete-passenger-btn')) {
+                    const passengerId = e.target.dataset.passengerId;
+                    deletePassenger(passengerId);
+                }
+            });
+            
+            // Modal event listeners
+            closeEditModalBtn.addEventListener('click', closeEditModal);
+            cancelEditBtn.addEventListener('click', closeEditModal);
+            editPassengerForm.addEventListener('submit', savePassengerChanges);
+            
+            // Close modal when clicking outside
+            editPassengerModal.addEventListener('click', function(e) {
+                if (e.target === editPassengerModal) {
+                    closeEditModal();
+                }
+            });
+            
+            // Close modal with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && editPassengerModal.classList.contains('active')) {
+                    closeEditModal();
+                }
+            });
+            
+            // Hide loading indicator and show table for demonstration
+            setTimeout(() => {
+                document.getElementById('loading-indicator').classList.add('hidden');
+                document.getElementById('passengers-table-container').classList.remove('hidden');
+            }, 1500);
+            
+            // Basic filter functionality
+            const filterInput = document.getElementById('filterInput');
+            if (filterInput) {
+                filterInput.addEventListener('input', function() {
+                    const filterValue = this.value.toLowerCase();
+                    const rows = document.querySelectorAll('#passengers-table-body tr');
+                    
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        if (text.includes(filterValue)) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html>
