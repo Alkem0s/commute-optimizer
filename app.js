@@ -157,6 +157,7 @@ async function initMap() {
     setInfoWindow(new google.maps.InfoWindow());
 
     const mapInstance = new google.maps.Map(document.getElementById('map'), {
+        gestureHandling: 'greedy',
         center: { lat: 0, lng: 0 },
         zoom: 2
     });
