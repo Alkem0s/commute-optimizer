@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hakkında | KanNav</title>
+  <style>
+    :root {
+      --color-primary: #2c3e50;
+      --color-background: #f4f4f4;
+      --color-card: #ffffff;
+      --color-text: #333;
+      --color-subtext: #555;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--color-background);
+      color: var(--color-text);
+      padding: 32px 16px;
+    }
+
+    .about-container {
+      max-width: 960px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .about-container h1 {
+      font-size: 2.5rem;
+      margin-bottom: 40px;
+      color: var(--color-primary);
+    }
+
+    .steps-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .step-card {
+      background-color: var(--color-card);
+      border-radius: 12px;
+      padding: 24px;
+      width: 280px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .step-card:hover {
+      transform: translateY(-6px);
+    }
+
+    .step-icon {
+      font-size: 40px;
+      margin-bottom: 16px;
+    }
+
+    .step-card h2 {
+      font-size: 1.25rem;
+      margin-bottom: 8px;
+      color: var(--color-primary);
+    }
+
+    .step-card p {
+      color: var(--color-subtext);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 768px) {
+      .step-card {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="about-container">
+    <h1>Nasıl Çalışır?</h1>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-icon">📍</div>
+        <h2>1. Lokasyonunuzu Seçin</h2>
+        <p>Başlangıç noktanızı harita üzerinden kolayca belirleyin.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-icon">🎯</div>
+        <h2>2. Hedef Noktanızı Girin</h2>
+        <p>Gideceğiniz yeri yazın veya harita üzerinden seçin.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-icon">🗺️</div>
+        <h2>3. En İyi Rotayı Keşfedin</h2>
+        <p>Sistem sizin için en uygun rotayı ve zamanı önerir.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
