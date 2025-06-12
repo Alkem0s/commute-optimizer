@@ -310,10 +310,10 @@ async function sendSelectedPassengersToMap() {
     
     if (confirm(`Selected ${selectedPassengerData.length} passengers. Would you like to go to the map page to add them?`)) {
       // Use the global loadPage function defined in index.html
-      if (window.loadPage) {
-        window.loadPage('map.html');
+      if (window.appRouter) {
+        window.appRouter.loadPage('map');
       } else {
-        console.error("window.loadPage is not defined. Cannot navigate to map page.");
+        console.error("window.appRouter.loadPage is not defined. Cannot navigate to map page.");
         alert("Error: Cannot navigate to map page. Missing navigation function.");
       }
     }
