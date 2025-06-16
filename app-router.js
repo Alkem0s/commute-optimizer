@@ -169,6 +169,6 @@ window.appRouter = {
 // Load the initial page (e.g., 'map') when the router script loads
 document.addEventListener('DOMContentLoaded', () => {
     // Check for a hash or default to 'map'
-    const initialPage = window.location.hash.slice(1) || 'map';
+    const initialPage = window.location.hash.slice(1) || 'home';
     window.appRouter.loadPage(initialPage);
 });
